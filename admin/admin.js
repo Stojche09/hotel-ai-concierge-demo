@@ -7,7 +7,7 @@ async function loadBookings() {
     try {
 
         const response = await fetch(
-            "https://hotel-ai-backend-production.up.railway.app/bookings"
+            "https://hotel-ai-backend-production.up.railway.app/admin/bookings"
         );
 
         if (!response.ok) {
@@ -245,7 +245,7 @@ function filterBookings() {
 async function deleteBooking(id) {
 
     const response = await fetch(
-        "https://hotel-ai-backend-production.up.railway.app/admin/rooms",
+        `https://hotel-ai-backend-production.up.railway.app/admin/booking/${id}`,
         {
             method: "DELETE"
         }
@@ -337,7 +337,7 @@ async function saveEdit() {
     const newRoom = document.getElementById("editRoom").value;
 
     const response = await fetch(
-        "https://hotel-ai-backend-production.up.railway.app/admin/rooms",
+        `https://hotel-ai-backend-production.up.railway.app/admin/booking/${currentBookingId}`,
         {
             method: "PUT",
             headers: {
@@ -371,7 +371,7 @@ async function saveEdit() {
 async function changeStatus(id, status) {
 
     const response = await fetch(
-        "https://hotel-ai-backend-production.up.railway.app/admin/rooms",
+        `https://hotel-ai-backend-production.up.railway.app/admin/booking/${id}/status`,
         {
             method: "PUT",
             headers: {
@@ -459,7 +459,7 @@ async function saveRoomEdit() {
     const newStatus = document.getElementById("editRoomStatus").value;
 
     const response = await fetch(
-        "https://hotel-ai-backend-production.up.railway.app/admin/rooms",
+        `https://hotel-ai-backend-production.up.railway.app/admin/room/${currentRoomNumber}`,
         {
             method: "PUT",
             headers: {
