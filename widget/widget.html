@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Hotel AI Concierge Widget</title>
+
+    <link
+        rel="stylesheet"
+        href="widget.css"
+    >
+</head>
+
+<body>
+
+    <!-- Floating Chat Button -->
+    <button
+        id="chat-toggle"
+        class="chat-toggle"
+        onclick="toggleChat()"
+        aria-label="Open hotel concierge"
+    >
+        💬
+    </button>
+
+
+    <!-- Chat Widget -->
+    <div
+        id="chat-widget"
+        class="chat-widget"
+    >
+
+        <!-- Header -->
+        <div class="chat-header">
+
+            <div class="chat-header-info">
+
+                <div class="chat-avatar">
+                    🏨
+                </div>
+
+                <div>
+                    <div class="chat-title">
+                        Hotel AI Concierge
+                    </div>
+
+                    <div class="chat-status">
+                        <span class="status-dot"></span>
+                        Online
+                    </div>
+                </div>
+
+            </div>
+
+            <button
+                class="close-button"
+                onclick="toggleChat()"
+                aria-label="Close hotel concierge"
+            >
+                ✕
+            </button>
+
+        </div>
+
+
+        <!-- Messages -->
+        <div id="chat-box">
+
+            <div class="ai-message">
+
+                <div class="message-avatar">
+                    🤖
+                </div>
+
+                <div class="message-bubble">
+                    Hello! Welcome to our hotel.
+                    How can I help you today?
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- Input -->
+        <div class="input-area">
+
+            <input
+                id="message"
+                type="text"
+                placeholder="Ask me anything..."
+                autocomplete="off"
+            >
+
+            <button
+                id="send-button"
+                onclick="sendMessage()"
+                aria-label="Send message"
+            >
+                ➤
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <script src="widget.js"></script>
+
+</body>
+
+</html>
