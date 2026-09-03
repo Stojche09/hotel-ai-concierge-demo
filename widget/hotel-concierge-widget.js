@@ -3,6 +3,7 @@
     const API_URL =
         "https://hotel-ai-backend-production.up.railway.app/booking/message";
 
+
     /*
     ==========================================
     CREATE WIDGET CONTAINER
@@ -66,7 +67,13 @@
                 border: none;
                 border-radius: 50%;
 
-                background: #1d4ed8;
+                background:
+                    linear-gradient(
+                        135deg,
+                        #1b5e20,
+                        #2e7d32
+                    );
+
                 color: white;
 
                 font-size: 28px;
@@ -151,7 +158,13 @@
             ========================= */
 
             .chat-header {
-                background: #1d4ed8;
+                background:
+                    linear-gradient(
+                        135deg,
+                        #1b5e20,
+                        #2e7d32
+                    );
+
                 color: white;
 
                 padding: 16px;
@@ -236,12 +249,14 @@
 
                 overflow-y: auto;
 
-                background: #f8fafc;
+                background: #f7f9f8;
 
                 display: flex;
                 flex-direction: column;
 
                 gap: 14px;
+
+                scroll-behavior: smooth;
             }
 
 
@@ -277,7 +292,7 @@
             }
 
             .ai-message .message-bubble {
-                background: white;
+                background: #e8f5e9;
 
                 color: #1f2937;
 
@@ -295,6 +310,8 @@
 
                 box-shadow:
                     0 2px 8px rgba(0, 0, 0, 0.06);
+
+                word-break: break-word;
             }
 
 
@@ -309,7 +326,7 @@
             }
 
             .user-message .message-bubble {
-                background: #1d4ed8;
+                background: #1976d2;
 
                 color: white;
 
@@ -324,6 +341,8 @@
                 line-height: 1.4;
 
                 font-size: 14px;
+
+                word-break: break-word;
             }
 
 
@@ -341,7 +360,7 @@
             }
 
             .typing-bubble {
-                background: white;
+                background: #e8f5e9;
 
                 padding: 10px 14px;
 
@@ -398,11 +417,11 @@
             }
 
             .message-input:focus {
-                border-color: #1d4ed8;
+                border-color: #2e7d32;
 
                 box-shadow:
                     0 0 0 3px
-                    rgba(29, 78, 216, 0.1);
+                    rgba(46, 125, 50, 0.10);
             }
 
             .send-button {
@@ -413,7 +432,7 @@
 
                 border-radius: 50%;
 
-                background: #1d4ed8;
+                background: #1b5e20;
                 color: white;
 
                 font-size: 18px;
@@ -423,10 +442,18 @@
                 display: flex;
                 align-items: center;
                 justify-content: center;
+
+                transition:
+                    background 0.2s ease,
+                    transform 0.1s ease;
             }
 
             .send-button:hover {
-                background: #1e40af;
+                background: #2e7d32;
+            }
+
+            .send-button:active {
+                transform: scale(0.96);
             }
 
 
@@ -465,7 +492,7 @@
 
         <button
             class="chat-toggle"
-            aria-label="Open hotel concierge"
+            aria-label="Open Hotel Makpetrol AI Concierge"
         >
             💬
         </button>
@@ -486,14 +513,14 @@
                     <div>
 
                         <div class="chat-title">
-                            Hotel AI Concierge
+                            Hotel Makpetrol
                         </div>
 
                         <div class="chat-status">
 
                             <span class="status-dot"></span>
 
-                            Online
+                            AI Concierge Online
 
                         </div>
 
@@ -503,7 +530,7 @@
 
                 <button
                     class="close-button"
-                    aria-label="Close hotel concierge"
+                    aria-label="Close Hotel Makpetrol AI Concierge"
                 >
                     ✕
                 </button>
@@ -520,7 +547,7 @@
                     </div>
 
                     <div class="message-bubble">
-                        Hello! Welcome to our hotel.
+                        Hello! Welcome to Hotel Makpetrol.
                         How can I help you today?
                     </div>
 
@@ -534,7 +561,7 @@
                 <input
                     class="message-input"
                     type="text"
-                    placeholder="Ask me anything..."
+                    placeholder="Ask about your stay..."
                     autocomplete="off"
                 >
 
@@ -747,6 +774,8 @@
 
     function showTypingIndicator() {
 
+        removeTypingIndicator();
+
         const container =
             document.createElement(
                 "div"
@@ -778,7 +807,7 @@
             "typing-bubble";
 
         bubble.textContent =
-            "Assistant is typing...";
+            "Hotel Makpetrol Concierge is typing...";
 
         container.appendChild(
             avatar
@@ -859,7 +888,7 @@
             if (!response.ok) {
 
                 throw new Error(
-                    "Server returned an error."
+                    `Server returned ${response.status}`
                 );
             }
 
@@ -872,9 +901,9 @@
 
 
             const aiResponse =
+                data.reply ||
                 data.response ||
                 data.message ||
-                data.reply ||
                 "I'm sorry, I couldn't process that request.";
 
 
@@ -885,14 +914,14 @@
         } catch (error) {
 
             console.error(
-                "Hotel concierge error:",
+                "Hotel Makpetrol Concierge error:",
                 error
             );
 
             removeTypingIndicator();
 
             addAIMessage(
-                "I'm sorry, the concierge is temporarily unavailable."
+                "I'm sorry, the Hotel Makpetrol AI Concierge is temporarily unavailable. Please try again shortly."
             );
         }
     }
