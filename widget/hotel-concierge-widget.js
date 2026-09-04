@@ -10,9 +10,9 @@
     - Hotel Belica
 
     Guest session isolation:
-    - Each browser tab receives its own session ID
-    - Refresh keeps the same session in the same tab
-    - Different tabs / browsers use separate chat state
+    - New tab = new guest session
+    - Duplicated tab = new guest session
+    - Refresh same tab = same guest session
     ============================================================
     */
 
@@ -26,7 +26,7 @@
 
 
     // =========================================================
-    // CURRENT SCRIPT / HOTEL ID
+    // CURRENT SCRIPT / HOTEL
     // =========================================================
 
     const currentScript =
@@ -43,7 +43,7 @@
 
 
     // =========================================================
-    // HOTEL CONFIGURATION
+    // HOTEL CONFIG
     // =========================================================
 
     const HOTEL_CONFIG = {
@@ -52,9 +52,6 @@
 
             name:
                 "Hotel Makpetrol",
-
-            shortName:
-                "Makpetrol",
 
             primaryColor:
                 "#1d4ed8",
@@ -77,9 +74,6 @@
 
             name:
                 "Hotel Belica",
-
-            shortName:
-                "Belica",
 
             primaryColor:
                 "#2e7d32",
@@ -108,19 +102,19 @@
     // GUEST SESSION
     // =========================================================
     //
-    // sessionStorage is isolated per browser tab.
+    // Browser behavior:
     //
-    // This means:
+    // Normal new tab:
+    // -> new session
     //
-    // Tab A:
-    // Hotel Belica + session A
+    // Duplicated tab:
+    // -> browser may copy sessionStorage,
+    //    so we detect that this is NOT a reload
+    //    and generate a fresh session
     //
-    // Tab B:
-    // Hotel Belica + session B
+    // Refresh:
+    // -> keep current session
     //
-    // They no longer share BookingEngine / ChatController state.
-    //
-    // Refreshing the same tab keeps the session ID.
     // =========================================================
 
     const SESSION_STORAGE_KEY =
@@ -149,13 +143,41 @@
     }
 
 
+    const navigationEntries =
+        performance.getEntriesByType(
+            "navigation"
+        );
+
+
+    const navigationEntry =
+        navigationEntries.length > 0
+            ? navigationEntries[0]
+            : null;
+
+
+    const isReload =
+        navigationEntry?.type ===
+        "reload";
+
+
     let SESSION_ID =
         sessionStorage.getItem(
             SESSION_STORAGE_KEY
         );
 
 
-    if (!SESSION_ID) {
+    /*
+    If this page is NOT a reload, create
+    a fresh guest session.
+
+    This also protects us when the browser
+    copies sessionStorage during "Duplicate tab".
+    */
+
+    if (
+        !isReload ||
+        !SESSION_ID
+    ) {
 
         SESSION_ID =
             createSessionId();
@@ -171,14 +193,21 @@
     console.log(
         "Hotel AI Concierge loaded:",
         {
-            hotel_id: HOTEL_ID,
-            session_id: SESSION_ID
+            hotel_id:
+                HOTEL_ID,
+
+            session_id:
+                SESSION_ID,
+
+            navigation_type:
+                navigationEntry?.type ||
+                "unknown"
         }
     );
 
 
     // =========================================================
-    // PREVENT DUPLICATE WIDGET
+    // REMOVE OLD WIDGET IF PRESENT
     // =========================================================
 
     const existingWidget =
@@ -252,7 +281,6 @@
                 height: 64px;
 
                 border: none;
-
                 border-radius: 50%;
 
                 background:
@@ -665,6 +693,7 @@
                         translateY(0);
                 }
 
+
                 30% {
 
                     opacity: 1;
@@ -1043,7 +1072,7 @@
 
 
     // =========================================================
-    // ELEMENT REFERENCES
+    // ELEMENTS
     // =========================================================
 
     const chatToggle =
@@ -1116,7 +1145,9 @@
         );
 
 
-        if (sender === "user") {
+        if (
+            sender === "user"
+        ) {
 
             messageElement.classList.add(
                 "user-message"
@@ -1144,7 +1175,7 @@
 
 
     // =========================================================
-    // TYPING INDICATOR
+    // TYPING
     // =========================================================
 
     function showTyping() {
@@ -1347,11 +1378,8 @@
 
 
             /*
-            -------------------------------------------------
-            Backend also returns the session ID.
-            If backend normalizes or changes it, keep the
-            server-provided version.
-            -------------------------------------------------
+            Keep server-returned session ID
+            in case backend normalized it.
             */
 
             if (
@@ -1524,7 +1552,7 @@
 
 
     // =========================================================
-    // INITIAL WELCOME MESSAGE
+    // INITIAL MESSAGE
     // =========================================================
 
     addMessage(
