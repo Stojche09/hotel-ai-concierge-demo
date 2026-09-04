@@ -1,136 +1,371 @@
+const API_BASE =
+    "https://hotel-ai-backend-production.up.railway.app";
+
+const HOTEL_CONFIG = {
+    makpetrol: {
+        name: "Hotel Makpetrol"
+    },
+    belica: {
+        name: "Hotel Belica"
+    }
+};
+
 let allBookings = [];
 let allRooms = [];
 let editId = null;
 let editRoomNumber = null;
+
+
+function getHotelId() {
+
+    const params = new URLSearchParams(
+        window.location.search
+    );
+
+    const hotelFromUrl = (
+        params.get("hotel") ||
+        params.get("hotel_id") ||
+        "makpetrol"
+    )
+        .trim()
+        .toLowerCase();
+
+    if (HOTEL_CONFIG[hotelFromUrl]) {
+        return hotelFromUrl;
+    }
+
+    return "makpetrol";
+}
+
+
+let currentHotelId = getHotelId();
+
+
+function getHotelName() {
+
+    return (
+        HOTEL_CONFIG[currentHotelId]?.name ||
+        currentHotelId
+    );
+}
+
+
+function buildApiUrl(path) {
+
+    const separator = path.includes("?")
+        ? "&"
+        : "?";
+
+    return (
+        `${API_BASE}${path}` +
+        `${separator}hotel_id=` +
+        `${encodeURIComponent(currentHotelId)}`
+    );
+}
+
+
+function updateHotelUI() {
+
+    const hotelName = getHotelName();
+
+    const title =
+        document.getElementById(
+            "hotelDashboardTitle"
+        );
+
+    const subtitle =
+        document.getElementById(
+            "hotelDashboardSubtitle"
+        );
+
+    const selector =
+        document.getElementById(
+            "hotelSelector"
+        );
+
+    const sidebarHotelName =
+        document.getElementById(
+            "sidebarHotelName"
+        );
+
+    if (title) {
+
+        title.textContent =
+            `${hotelName} Admin Dashboard`;
+    }
+
+    if (subtitle) {
+
+        subtitle.textContent =
+            `Manage rooms, reservations and operations for ${hotelName}.`;
+    }
+
+    if (selector) {
+
+        selector.value =
+            currentHotelId;
+    }
+
+    if (sidebarHotelName) {
+
+        sidebarHotelName.textContent =
+            hotelName;
+    }
+
+    document.title =
+        `${hotelName} Admin Dashboard`;
+}
+
+
+function changeHotel(hotelId) {
+
+    if (!HOTEL_CONFIG[hotelId]) {
+        return;
+    }
+
+    const url = new URL(
+        window.location.href
+    );
+
+    url.searchParams.set(
+        "hotel",
+        hotelId
+    );
+
+    window.location.href =
+        url.toString();
+}
+
+
 async function loadBookings() {
 
     try {
 
         const response = await fetch(
-            "https://hotel-ai-backend-production.up.railway.app/admin/bookings"
+            buildApiUrl(
+                "/admin/bookings"
+            )
         );
 
         if (!response.ok) {
+
             throw new Error(
                 `Bookings request failed: ${response.status}`
             );
         }
 
-        const data = await response.json();
+        const data =
+            await response.json();
 
-        console.log("Bookings API response:", data);
+        console.log(
+            "Bookings API response:",
+            data
+        );
 
         if (!Array.isArray(data.bookings)) {
+
             throw new Error(
                 "data.bookings is not an array"
             );
         }
 
-        allBookings = data.bookings;
+        allBookings =
+            data.bookings;
 
-        document.getElementById("totalBookings").textContent =
+        document.getElementById(
+            "totalBookings"
+        ).textContent =
             allBookings.length;
 
         let totalGuests = 0;
 
-        allBookings.forEach(booking => {
+        allBookings.forEach(
+            booking => {
 
-            const guests = Number(booking.guests);
+                const guests =
+                    Number(
+                        booking.guests
+                    );
 
-            if (!isNaN(guests)) {
-                totalGuests += guests;
+                if (!isNaN(guests)) {
+
+                    totalGuests +=
+                        guests;
+                }
             }
+        );
 
-        });
-
-        document.getElementById("totalGuests").textContent =
+        document.getElementById(
+            "totalGuests"
+        ).textContent =
             totalGuests;
 
-        renderBookings(allBookings);
+        renderBookings(
+            allBookings
+        );
 
     } catch (error) {
 
-        console.error("Failed to load bookings:", error);
+        console.error(
+            "Failed to load bookings:",
+            error
+        );
 
+        allBookings = [];
+
+        document.getElementById(
+            "totalBookings"
+        ).textContent = "0";
+
+        document.getElementById(
+            "totalGuests"
+        ).textContent = "0";
+
+        renderBookings([]);
     }
-
 }
+
 
 async function loadRooms() {
 
-    const response = await fetch(
-        "https://hotel-ai-backend-production.up.railway.app/admin/rooms"
-    );
+    try {
 
-    const data = await response.json();
+        const response = await fetch(
+            buildApiUrl(
+                "/admin/rooms"
+            )
+        );
 
-    allRooms = data.rooms;
+        if (!response.ok) {
 
+            throw new Error(
+                `Rooms request failed: ${response.status}`
+            );
+        }
 
-    const totalRooms = allRooms.length;
+        const data =
+            await response.json();
 
-    const availableRooms = allRooms.filter(
-        room => room.status === "Available"
-    ).length;
+        allRooms =
+            Array.isArray(data.rooms)
+                ? data.rooms
+                : [];
 
-    const occupiedRooms = allRooms.filter(
-        room => room.status === "Occupied"
-    ).length;
+        const totalRooms =
+            allRooms.length;
 
-    const cleaningRooms = allRooms.filter(
-        room => room.status === "Cleaning"
-    ).length;
+        const availableRooms =
+            allRooms.filter(
+                room =>
+                    room.status ===
+                    "Available"
+            ).length;
 
-    const maintenanceRooms = allRooms.filter(
-        room => room.status === "Maintenance"
-    ).length;
+        const occupiedRooms =
+            allRooms.filter(
+                room =>
+                    room.status ===
+                    "Occupied"
+            ).length;
 
+        const cleaningRooms =
+            allRooms.filter(
+                room =>
+                    room.status ===
+                    "Cleaning"
+            ).length;
 
-    document.getElementById("totalRooms").textContent =
-        totalRooms;
+        const maintenanceRooms =
+            allRooms.filter(
+                room =>
+                    room.status ===
+                    "Maintenance"
+            ).length;
 
-    document.getElementById("availableRooms").textContent =
-        availableRooms;
+        document.getElementById(
+            "totalRooms"
+        ).textContent =
+            totalRooms;
 
-    document.getElementById("occupiedRooms").textContent =
-        occupiedRooms;
+        document.getElementById(
+            "availableRooms"
+        ).textContent =
+            availableRooms;
 
-    document.getElementById("cleaningRooms").textContent =
-        cleaningRooms;
+        document.getElementById(
+            "occupiedRooms"
+        ).textContent =
+            occupiedRooms;
 
-    document.getElementById("maintenanceRooms").textContent =
-        maintenanceRooms;
+        document.getElementById(
+            "cleaningRooms"
+        ).textContent =
+            cleaningRooms;
 
+        document.getElementById(
+            "maintenanceRooms"
+        ).textContent =
+            maintenanceRooms;
 
-    const roomsBody = document.getElementById("roomsBody");
+        const roomsBody =
+            document.getElementById(
+                "roomsBody"
+            );
 
-    roomsBody.innerHTML = "";
+        roomsBody.innerHTML = "";
 
-    allRooms.forEach(room => {
+        allRooms.forEach(room => {
 
-        roomsBody.innerHTML += `
-            <tr>
-                <td>${room.room_number}</td>
-                <td>${room.type}</td>
-                <td>${room.view}</td>
+            roomsBody.innerHTML += `
+                <tr>
 
-                <td>
-                    <span class="room-status ${getRoomStatusClass(room.status)}">
-                        ${room.status}
-                    </span>
-                </td>
+                    <td>
+                        ${room.room_number}
+                    </td>
 
-                <td>
-                    <button onclick="editRoom('${room.room_number}')">
-                        Edit
-                    </button>
-                </td>
-            </tr>
-        `;
+                    <td>
+                        ${room.type}
+                    </td>
 
-    });
+                    <td>
+                        ${room.view}
+                    </td>
 
+                    <td>
+
+                        <span
+                            class="room-status ${getRoomStatusClass(room.status)}"
+                        >
+                            ${room.status}
+                        </span>
+
+                    </td>
+
+                    <td>
+
+                        <button
+                            onclick="editRoom('${room.room_number}')"
+                        >
+                            Edit
+                        </button>
+
+                    </td>
+
+                </tr>
+            `;
+        });
+
+    } catch (error) {
+
+        console.error(
+            "Failed to load rooms:",
+            error
+        );
+
+        allRooms = [];
+    }
 }
+
 
 function getRoomStatusClass(status) {
 
@@ -151,12 +386,15 @@ function getRoomStatusClass(status) {
         default:
             return "";
     }
-
 }
+
 
 function renderBookings(bookings) {
 
-    const table = document.getElementById("bookings");
+    const table =
+        document.getElementById(
+            "bookings"
+        );
 
     table.innerHTML = "";
 
@@ -164,64 +402,98 @@ function renderBookings(bookings) {
 
         table.innerHTML += `
             <tr>
-                <td>${booking.confirmation_id}</td>
-                <td>${booking.name}</td>
-                <td>${booking.room || "Not Assigned"}</td>
-                <td>${booking.guests}</td>
+
                 <td>
+                    ${booking.confirmation_id}
+                </td>
 
-<select
-    class="${getStatusClass(booking.status)}"
-    onchange="changeStatus('${booking.confirmation_id}', this.value)">
+                <td>
+                    ${booking.name}
+                </td>
 
-    <option value="Pending"
-        ${booking.status === "Pending" ? "selected" : ""}>
-        Pending
-    </option>
+                <td>
+                    ${booking.room || "Not Assigned"}
+                </td>
 
-    <option value="Confirmed"
-        ${booking.status === "Confirmed" ? "selected" : ""}>
-        Confirmed
-    </option>
-
-    <option value="Checked In"
-        ${booking.status === "Checked In" ? "selected" : ""}>
-        Checked In
-    </option>
-
-    <option value="Checked Out"
-        ${booking.status === "Checked Out" ? "selected" : ""}>
-        Checked Out
-    </option>
-
-    <option value="Cancelled"
-        ${booking.status === "Cancelled" ? "selected" : ""}>
-        Cancelled
-    </option>
-
-</select>
-
-</td>
-                <td>${booking.check_in}</td>
-                <td>${booking.phone}</td>
+                <td>
+                    ${booking.guests}
+                </td>
 
                 <td>
 
-    <button onclick="editBooking('${booking.confirmation_id}')">
-        Edit
-    </button>
+                    <select
+                        class="${getStatusClass(booking.status)}"
+                        onchange="changeStatus('${booking.confirmation_id}', this.value)"
+                    >
 
-    <button onclick="deleteBooking('${booking.confirmation_id}')">
-        Delete
-    </button>
+                        <option
+                            value="Pending"
+                            ${booking.status === "Pending" ? "selected" : ""}
+                        >
+                            Pending
+                        </option>
 
-</td>
+                        <option
+                            value="Confirmed"
+                            ${booking.status === "Confirmed" ? "selected" : ""}
+                        >
+                            Confirmed
+                        </option>
+
+                        <option
+                            value="Checked In"
+                            ${booking.status === "Checked In" ? "selected" : ""}
+                        >
+                            Checked In
+                        </option>
+
+                        <option
+                            value="Checked Out"
+                            ${booking.status === "Checked Out" ? "selected" : ""}
+                        >
+                            Checked Out
+                        </option>
+
+                        <option
+                            value="Cancelled"
+                            ${booking.status === "Cancelled" ? "selected" : ""}
+                        >
+                            Cancelled
+                        </option>
+
+                    </select>
+
+                </td>
+
+                <td>
+                    ${booking.check_in}
+                </td>
+
+                <td>
+                    ${booking.phone}
+                </td>
+
+                <td>
+
+                    <button
+                        onclick="editBooking('${booking.confirmation_id}')"
+                    >
+                        Edit
+                    </button>
+
+                    <button
+                        onclick="deleteBooking('${booking.confirmation_id}')"
+                    >
+                        Delete
+                    </button>
+
+                </td>
+
             </tr>
         `;
-
     });
-
 }
+
 
 function filterBookings() {
 
@@ -230,22 +502,40 @@ function filterBookings() {
         .value
         .toLowerCase();
 
-    const filtered = allBookings.filter(booking =>
+    const filtered =
+        allBookings.filter(
+            booking =>
 
-        booking.name.toLowerCase().includes(search) ||
+                String(
+                    booking.name || ""
+                )
+                    .toLowerCase()
+                    .includes(search)
 
-        booking.confirmation_id.toLowerCase().includes(search)
+                ||
 
+                String(
+                    booking.confirmation_id ||
+                    ""
+                )
+                    .toLowerCase()
+                    .includes(search)
+        );
+
+    renderBookings(
+        filtered
     );
-
-    renderBookings(filtered);
-
 }
+
 
 async function deleteBooking(id) {
 
     const response = await fetch(
-        `https://hotel-ai-backend-production.up.railway.app/admin/booking/${id}`,
+
+        buildApiUrl(
+            `/admin/booking/${encodeURIComponent(id)}`
+        ),
+
         {
             method: "DELETE"
         }
@@ -253,96 +543,198 @@ async function deleteBooking(id) {
 
     if (response.ok) {
 
-        alert("Booking deleted successfully.");
+        alert(
+            "Booking deleted successfully."
+        );
 
-        loadBookings();
+        await Promise.all([
+            loadBookings(),
+            loadRooms()
+        ]);
 
     } else {
 
-        alert("Failed to delete booking.");
+        const errorData =
+            await response.json()
+                .catch(
+                    () => ({})
+                );
 
+        console.error(
+            "Delete booking failed:",
+            errorData
+        );
+
+        alert(
+            errorData.detail ||
+            "Failed to delete booking."
+        );
     }
-
 }
+
+
 function editBooking(id) {
 
-    const booking = allBookings.find(
-        booking => booking.confirmation_id === id
-    );
+    const booking =
+        allBookings.find(
+            booking =>
+                booking.confirmation_id ===
+                id
+        );
 
     if (!booking) {
-        console.error("Booking not found:", id);
-        alert("Booking not found.");
+
+        console.error(
+            "Booking not found:",
+            id
+        );
+
+        alert(
+            "Booking not found."
+        );
+
         return;
     }
 
     editId = id;
 
-    const phoneInput = document.getElementById("editPhone");
-    const roomSelect = document.getElementById("editRoom");
-    const modal = document.getElementById("editModal");
+    const phoneInput =
+        document.getElementById(
+            "editPhone"
+        );
 
-    if (!phoneInput || !roomSelect || !modal) {
-        console.error("Booking modal elements are missing.");
-        alert("Booking edit modal is not configured correctly.");
+    const roomSelect =
+        document.getElementById(
+            "editRoom"
+        );
+
+    const modal =
+        document.getElementById(
+            "editModal"
+        );
+
+    if (
+        !phoneInput ||
+        !roomSelect ||
+        !modal
+    ) {
+
+        console.error(
+            "Booking modal elements are missing."
+        );
+
+        alert(
+            "Booking edit modal is not configured correctly."
+        );
+
         return;
     }
 
-    phoneInput.value = booking.phone || "";
+    phoneInput.value =
+        booking.phone || "";
 
     roomSelect.innerHTML = `
-        <option value="Not Assigned">Not Assigned</option>
+        <option value="Not Assigned">
+            Not Assigned
+        </option>
     `;
 
     allRooms.forEach(room => {
 
-        const roomNumber = String(room.room_number);
-        const currentRoom = String(booking.room || "Not Assigned");
+        const roomNumber =
+            String(
+                room.room_number
+            );
 
-        const isAvailable = room.status === "Available";
-        const isCurrentRoom = roomNumber === currentRoom;
+        const currentRoom =
+            String(
+                booking.room ||
+                "Not Assigned"
+            );
 
-        // Show available rooms and the booking's current room.
-        if (isAvailable || isCurrentRoom) {
+        const isAvailable =
+            room.status ===
+            "Available";
 
-            const statusLabel = isCurrentRoom
-                ? `${room.status} — Current Room`
-                : room.status;
+        const isCurrentRoom =
+            roomNumber ===
+            currentRoom;
+
+        if (
+            isAvailable ||
+            isCurrentRoom
+        ) {
+
+            const statusLabel =
+                isCurrentRoom
+                    ? `${room.status} — Current Room`
+                    : room.status;
 
             roomSelect.innerHTML += `
                 <option value="${roomNumber}">
-                    ${roomNumber} — ${room.type} — ${room.view} — ${statusLabel}
+
+                    ${roomNumber}
+                    —
+                    ${room.type}
+                    —
+                    ${room.view}
+                    —
+                    ${statusLabel}
+
                 </option>
             `;
         }
-
     });
 
-    roomSelect.value = booking.room || "Not Assigned";
+    roomSelect.value =
+        booking.room ||
+        "Not Assigned";
 
-    modal.style.display = "flex";
+    modal.style.display =
+        "flex";
 }
+
+
 function closeEdit() {
 
-    document.getElementById("editModal").style.display = "none";
+    document.getElementById(
+        "editModal"
+    ).style.display =
+        "none";
 
     editId = null;
-
 }
+
+
 async function saveEdit() {
 
-    const currentBookingId = editId;
+    const currentBookingId =
+        editId;
 
-    const newPhone = document.getElementById("editPhone").value;
-    const newRoom = document.getElementById("editRoom").value;
+    const newPhone =
+        document.getElementById(
+            "editPhone"
+        ).value;
+
+    const newRoom =
+        document.getElementById(
+            "editRoom"
+        ).value;
 
     const response = await fetch(
-        `https://hotel-ai-backend-production.up.railway.app/admin/booking/${currentBookingId}`,
+
+        buildApiUrl(
+            `/admin/booking/${encodeURIComponent(currentBookingId)}`
+        ),
+
         {
             method: "PUT",
+
             headers: {
-                "Content-Type": "application/json"
+                "Content-Type":
+                    "application/json"
             },
+
             body: JSON.stringify({
                 phone: newPhone,
                 room: newRoom
@@ -361,22 +753,44 @@ async function saveEdit() {
 
     } else {
 
-        const errorData = await response.json();
+        const errorData =
+            await response.json()
+                .catch(
+                    () => ({})
+                );
 
-        console.error("Booking update failed:", errorData);
+        console.error(
+            "Booking update failed:",
+            errorData
+        );
 
-        alert("Failed to update booking");
+        alert(
+            errorData.detail ||
+            "Failed to update booking"
+        );
     }
 }
-async function changeStatus(id, status) {
+
+
+async function changeStatus(
+    id,
+    status
+) {
 
     const response = await fetch(
-        `https://hotel-ai-backend-production.up.railway.app/admin/booking/${id}/status`,
+
+        buildApiUrl(
+            `/admin/booking/${encodeURIComponent(id)}/status`
+        ),
+
         {
             method: "PUT",
+
             headers: {
-                "Content-Type": "application/json"
+                "Content-Type":
+                    "application/json"
             },
+
             body: JSON.stringify({
                 status: status
             })
@@ -389,11 +803,20 @@ async function changeStatus(id, status) {
 
     } else {
 
-        alert("Failed to update booking status.");
+        const errorData =
+            await response.json()
+                .catch(
+                    () => ({})
+                );
 
+        alert(
+            errorData.detail ||
+            "Failed to update booking status."
+        );
     }
-
 }
+
+
 function getStatusClass(status) {
 
     switch (status) {
@@ -415,56 +838,163 @@ function getStatusClass(status) {
 
         default:
             return "";
-
     }
-
 }
+
 
 function editRoom(roomNumber) {
 
-    editRoomNumber = roomNumber;
+    editRoomNumber =
+        String(
+            roomNumber
+        );
 
-    const room = allRooms.find(
-        r => r.room_number === roomNumber
-    );
+    const room =
+        allRooms.find(
+            r =>
+                String(
+                    r.room_number
+                )
+                ===
+                String(
+                    roomNumber
+                )
+        );
 
     if (!room) {
-        alert("Room not found.");
+
+        alert(
+            "Room not found."
+        );
+
         return;
     }
 
-    document.getElementById("editRoomType").value = room.type || "Standard";
-    document.getElementById("editRoomView").value = room.view || "City";
-    document.getElementById("editRoomStatus").value = room.status || "Available";
+    const typeSelect =
+        document.getElementById(
+            "editRoomType"
+        );
 
-    document.getElementById("roomEditModal").style.display = "flex";
+    const viewSelect =
+        document.getElementById(
+            "editRoomView"
+        );
 
+    ensureSelectOption(
+        typeSelect,
+        room.type
+    );
+
+    ensureSelectOption(
+        viewSelect,
+        room.view
+    );
+
+    typeSelect.value =
+        room.type || "";
+
+    viewSelect.value =
+        room.view || "";
+
+    document.getElementById(
+        "editRoomStatus"
+    ).value =
+        room.status ||
+        "Available";
+
+    document.getElementById(
+        "roomEditModal"
+    ).style.display =
+        "flex";
+}
+
+
+function ensureSelectOption(
+    selectElement,
+    value
+) {
+
+    if (
+        !selectElement ||
+        !value
+    ) {
+        return;
+    }
+
+    const exists =
+        Array.from(
+            selectElement.options
+        ).some(
+            option =>
+                option.value ===
+                value
+        );
+
+    if (!exists) {
+
+        const option =
+            document.createElement(
+                "option"
+            );
+
+        option.value =
+            value;
+
+        option.textContent =
+            value;
+
+        selectElement.appendChild(
+            option
+        );
+    }
 }
 
 
 function closeRoomEdit() {
 
-    document.getElementById("roomEditModal").style.display = "none";
+    document.getElementById(
+        "roomEditModal"
+    ).style.display =
+        "none";
 
     editRoomNumber = null;
-
 }
+
 
 async function saveRoomEdit() {
 
-    const currentRoomNumber = editRoomNumber;
+    const currentRoomNumber =
+        editRoomNumber;
 
-    const newType = document.getElementById("editRoomType").value;
-    const newView = document.getElementById("editRoomView").value;
-    const newStatus = document.getElementById("editRoomStatus").value;
+    const newType =
+        document.getElementById(
+            "editRoomType"
+        ).value;
+
+    const newView =
+        document.getElementById(
+            "editRoomView"
+        ).value;
+
+    const newStatus =
+        document.getElementById(
+            "editRoomStatus"
+        ).value;
 
     const response = await fetch(
-        `https://hotel-ai-backend-production.up.railway.app/admin/room/${currentRoomNumber}`,
+
+        buildApiUrl(
+            `/admin/room/${encodeURIComponent(currentRoomNumber)}`
+        ),
+
         {
             method: "PUT",
+
             headers: {
-                "Content-Type": "application/json"
+                "Content-Type":
+                    "application/json"
             },
+
             body: JSON.stringify({
                 type: newType,
                 view: newView,
@@ -484,14 +1014,27 @@ async function saveRoomEdit() {
 
     } else {
 
-        alert("Failed to update room.");
+        const errorData =
+            await response.json()
+                .catch(
+                    () => ({})
+                );
 
+        alert(
+            errorData.detail ||
+            "Failed to update room."
+        );
     }
 }
 
-document.addEventListener("DOMContentLoaded", function () {
 
-    loadBookings();
-    loadRooms();
+document.addEventListener(
+    "DOMContentLoaded",
+    function () {
 
-});
+        updateHotelUI();
+
+        loadBookings();
+        loadRooms();
+    }
+);
