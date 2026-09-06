@@ -1,57 +1,96 @@
 <!DOCTYPE html>
-
 <html lang="en">
-
 <head>
-
     <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
-    <title>
-        Hotel Admin Dashboard
-    </title>
-
-    <link
-        rel="stylesheet"
-        href="style.css"
-    >
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hotel Admin Login</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-    <div class="dashboard-layout">
+    <!-- LOGIN SCREEN -->
+    <section id="loginScreen" class="login-screen">
 
+        <div class="login-card">
+
+            <div class="login-brand">
+                🏨 Hotel AI
+            </div>
+
+            <h1>Admin Login</h1>
+
+            <p class="login-subtitle">
+                Sign in to manage your hotel's rooms and reservations.
+            </p>
+
+            <form id="loginForm" class="login-form">
+
+                <label for="loginUsername">
+                    Username
+                </label>
+
+                <input
+                    type="text"
+                    id="loginUsername"
+                    name="username"
+                    autocomplete="username"
+                    required
+                >
+
+                <label for="loginPassword">
+                    Password
+                </label>
+
+                <input
+                    type="password"
+                    id="loginPassword"
+                    name="password"
+                    autocomplete="current-password"
+                    required
+                >
+
+                <div
+                    id="loginError"
+                    class="login-error"
+                    aria-live="polite"
+                ></div>
+
+                <button
+                    type="submit"
+                    id="loginButton"
+                    class="login-button"
+                >
+                    Sign In
+                </button>
+
+            </form>
+
+        </div>
+
+    </section>
+
+
+    <!-- DASHBOARD -->
+    <div
+        id="dashboardApp"
+        class="dashboard-layout"
+        hidden
+    >
 
         <!-- SIDEBAR -->
-
         <aside class="sidebar">
 
             <div class="sidebar-brand">
-
                 🏨 Hotel AI
-
             </div>
-
 
             <div
                 id="sidebarHotelName"
-                style="
-                    margin: 0 0 20px;
-                    padding: 0 16px;
-                    font-size: 13px;
-                    opacity: 0.75;
-                "
+                class="sidebar-hotel-name"
             >
-
-                Hotel Makpetrol
-
+                Hotel
             </div>
-
 
             <nav class="sidebar-nav">
 
@@ -59,139 +98,94 @@
                     href="#dashboard"
                     class="active"
                 >
-
                     Dashboard
-
                 </a>
-
 
                 <a href="#bookingsSection">
-
                     Bookings
-
                 </a>
-
 
                 <a href="#roomsSection">
-
                     Rooms
-
                 </a>
 
-
                 <a href="#">
-
                     AI Concierge
-
                 </a>
 
-
                 <a href="#">
-
                     Services
-
                 </a>
 
-
                 <a href="#">
-
                     Settings
-
                 </a>
 
             </nav>
 
+            <div class="sidebar-footer">
+
+                <div class="logged-user">
+
+                    <span class="logged-user-label">
+                        Signed in as
+                    </span>
+
+                    <strong id="loggedUsername">
+                        Admin
+                    </strong>
+
+                </div>
+
+                <button
+                    type="button"
+                    class="logout-button"
+                    onclick="logout()"
+                >
+                    Logout
+                </button>
+
+            </div>
+
         </aside>
 
 
-
-        <!-- MAIN DASHBOARD -->
-
+        <!-- MAIN CONTENT -->
         <main
             class="main-content"
             id="dashboard"
         >
 
-
             <!-- HEADER -->
-
             <div class="page-header">
-
 
                 <div>
 
                     <h1 id="hotelDashboardTitle">
-
-                        Hotel Makpetrol
-                        Admin Dashboard
-
+                        Hotel Admin Dashboard
                     </h1>
 
-
                     <p id="hotelDashboardSubtitle">
-
-                        Manage rooms,
-                        reservations and
-                        hotel operations.
-
+                        Manage rooms, reservations and hotel operations.
                     </p>
 
                 </div>
 
+                <div class="header-account">
 
-
-                <!-- HOTEL SELECTOR -->
-
-                <div
-                    style="
-                        display: flex;
-                        align-items: center;
-                        gap: 10px;
-                    "
-                >
-
-                    <label for="hotelSelector">
-
-                        Hotel
-
-                    </label>
-
-
-                    <select
-                        id="hotelSelector"
-                        onchange="changeHotel(this.value)"
-                        style="
-                            padding: 10px 12px;
-                            border-radius: 8px;
-                            border: 1px solid #d7dce5;
-                            background: white;
-                            cursor: pointer;
-                        "
+                    <span
+                        id="headerHotelBadge"
+                        class="hotel-badge"
                     >
-
-                        <option value="makpetrol">
-
-                            Hotel Makpetrol
-
-                        </option>
-
-
-                        <option value="belica">
-
-                            Hotel Belica
-
-                        </option>
-
-                    </select>
+                        Hotel
+                    </span>
 
                 </div>
 
             </div>
 
 
-
-            <!-- STATISTICS -->
-
+            <!-- OVERVIEW -->
             <section class="overview-section">
 
                 <div class="section-header">
@@ -202,111 +196,50 @@
 
                 </div>
 
-
                 <div class="stats">
 
-
                     <div class="card">
-
-                        <h3>
-                            Total Rooms
-                        </h3>
-
-                        <p id="totalRooms">
-                            0
-                        </p>
-
+                        <h3>Total Rooms</h3>
+                        <p id="totalRooms">0</p>
                     </div>
 
-
                     <div class="card">
-
-                        <h3>
-                            Available
-                        </h3>
-
-                        <p id="availableRooms">
-                            0
-                        </p>
-
+                        <h3>Available</h3>
+                        <p id="availableRooms">0</p>
                     </div>
 
-
                     <div class="card">
-
-                        <h3>
-                            Occupied
-                        </h3>
-
-                        <p id="occupiedRooms">
-                            0
-                        </p>
-
+                        <h3>Occupied</h3>
+                        <p id="occupiedRooms">0</p>
                     </div>
 
-
                     <div class="card">
-
-                        <h3>
-                            Cleaning
-                        </h3>
-
-                        <p id="cleaningRooms">
-                            0
-                        </p>
-
+                        <h3>Cleaning</h3>
+                        <p id="cleaningRooms">0</p>
                     </div>
 
-
                     <div class="card">
-
-                        <h3>
-                            Maintenance
-                        </h3>
-
-                        <p id="maintenanceRooms">
-                            0
-                        </p>
-
+                        <h3>Maintenance</h3>
+                        <p id="maintenanceRooms">0</p>
                     </div>
 
-
                     <div class="card">
-
-                        <h3>
-                            Total Bookings
-                        </h3>
-
-                        <p id="totalBookings">
-                            0
-                        </p>
-
+                        <h3>Total Bookings</h3>
+                        <p id="totalBookings">0</p>
                     </div>
 
-
                     <div class="card">
-
-                        <h3>
-                            Total Guests
-                        </h3>
-
-                        <p id="totalGuests">
-                            0
-                        </p>
-
+                        <h3>Total Guests</h3>
+                        <p id="totalGuests">0</p>
                     </div>
-
 
                 </div>
 
             </section>
 
 
-
             <!-- BOOKINGS -->
-
             <section id="bookingsSection">
-
 
                 <div class="section-header">
 
@@ -317,10 +250,7 @@
                         </h2>
 
                         <p>
-
-                            View and manage
-                            hotel reservations.
-
+                            View and manage hotel reservations.
                         </p>
 
                     </div>
@@ -328,23 +258,31 @@
                 </div>
 
 
-
-                <!-- SEARCH -->
-
                 <div class="table-toolbar">
 
                     <input
                         type="text"
                         id="search"
-                        placeholder="Search by guest name or confirmation..."
-                        onkeyup="filterBookings()"
+                        placeholder="Search by guest, confirmation, phone or room..."
+                        oninput="filterBookings()"
                     >
+
+                    <select
+                        id="statusFilter"
+                        onchange="filterBookings()"
+                        aria-label="Filter bookings by status"
+                    >
+                        <option value="All">All Statuses</option>
+                        <option value="Pending">Pending</option>
+                        <option value="Confirmed">Confirmed</option>
+                        <option value="Checked In">Checked In</option>
+                        <option value="Checked Out">Checked Out</option>
+                        <option value="Cancelled">Cancelled</option>
+                        <option value="Expired">Expired</option>
+                    </select>
 
                 </div>
 
-
-
-                <!-- BOOKINGS TABLE -->
 
                 <div class="table-container">
 
@@ -353,46 +291,20 @@
                         <thead>
 
                             <tr>
-
-                                <th>
-                                    Confirmation
-                                </th>
-
-                                <th>
-                                    Name
-                                </th>
-
-                                <th>
-                                    Room
-                                </th>
-
-                                <th>
-                                    Guests
-                                </th>
-
-                                <th>
-                                    Status
-                                </th>
-
-                                <th>
-                                    Check In
-                                </th>
-
-                                <th>
-                                    Phone
-                                </th>
-
-                                <th>
-                                    Action
-                                </th>
-
+                                <th>Confirmation</th>
+                                <th>Name</th>
+                                <th>Room</th>
+                                <th>Guests</th>
+                                <th>Status</th>
+                                <th>Check In</th>
+                                <th>Check Out</th>
+                                <th>Phone</th>
+                                <th>Action</th>
                             </tr>
 
                         </thead>
 
-
                         <tbody id="bookings">
-
                         </tbody>
 
                     </table>
@@ -402,11 +314,8 @@
             </section>
 
 
-
             <!-- ROOMS -->
-
             <section id="roomsSection">
-
 
                 <div class="section-header">
 
@@ -417,17 +326,12 @@
                         </h2>
 
                         <p>
-
-                            Monitor room
-                            availability and
-                            room status.
-
+                            Monitor room availability and room status.
                         </p>
 
                     </div>
 
                 </div>
-
 
 
                 <div class="table-container">
@@ -437,34 +341,16 @@
                         <thead>
 
                             <tr>
-
-                                <th>
-                                    Room
-                                </th>
-
-                                <th>
-                                    Type
-                                </th>
-
-                                <th>
-                                    View
-                                </th>
-
-                                <th>
-                                    Status
-                                </th>
-
-                                <th>
-                                    Action
-                                </th>
-
+                                <th>Room</th>
+                                <th>Type</th>
+                                <th>View</th>
+                                <th>Status</th>
+                                <th>Action</th>
                             </tr>
 
                         </thead>
 
-
                         <tbody id="roomsBody">
-
                         </tbody>
 
                     </table>
@@ -478,9 +364,7 @@
     </div>
 
 
-
     <!-- BOOKING EDIT MODAL -->
-
     <div
         id="editModal"
         class="modal"
@@ -488,7 +372,6 @@
     >
 
         <div class="modal-content">
-
 
             <div class="modal-header">
 
@@ -498,69 +381,90 @@
 
             </div>
 
-
-
             <div class="modal-body">
 
-
-                <label for="editPhone">
-
-                    Phone
-
+                <label for="editGuestName">
+                    Guest Name
                 </label>
 
+                <input
+                    type="text"
+                    id="editGuestName"
+                    readonly
+                >
+
+                <label for="editGuests">
+                    Guests
+                </label>
+
+                <input
+                    type="text"
+                    id="editGuests"
+                    readonly
+                >
+
+                <label for="editCheckIn">
+                    Check In
+                </label>
+
+                <input
+                    type="text"
+                    id="editCheckIn"
+                    readonly
+                >
+
+                <label for="editCheckOut">
+                    Check Out
+                </label>
+
+                <input
+                    type="text"
+                    id="editCheckOut"
+                    readonly
+                >
+
+                <label for="editPhone">
+                    Phone
+                </label>
 
                 <input
                     type="text"
                     id="editPhone"
                 >
 
-
-
                 <label for="editRoom">
-
                     Room
-
                 </label>
-
 
                 <select id="editRoom">
 
                     <option value="Not Assigned">
-
                         Not Assigned
-
                     </option>
 
                 </select>
 
+                <p class="modal-helper-text">
+                    Guest details and stay dates are shown for reference. Phone and room can be edited here.
+                </p>
 
             </div>
 
-
-
             <div class="modal-actions">
-
 
                 <button
                     class="button-primary"
                     onclick="saveEdit()"
                 >
-
                     Save
-
                 </button>
-
 
                 <button
                     class="button-secondary"
                     onclick="closeEdit()"
                 >
-
                     Cancel
-
                 </button>
-
 
             </div>
 
@@ -569,9 +473,7 @@
     </div>
 
 
-
     <!-- ROOM EDIT MODAL -->
-
     <div
         id="roomEditModal"
         class="modal"
@@ -579,7 +481,6 @@
     >
 
         <div class="modal-content">
-
 
             <div class="modal-header">
 
@@ -589,136 +490,87 @@
 
             </div>
 
-
-
             <div class="modal-body">
 
-
                 <label for="editRoomType">
-
                     Type
-
                 </label>
-
 
                 <select id="editRoomType">
 
                     <option value="Standard">
-
                         Standard
-
                     </option>
-
 
                     <option value="Deluxe">
-
                         Deluxe
-
                     </option>
 
-
                     <option value="Suite">
-
                         Suite
-
                     </option>
 
                 </select>
 
 
-
                 <label for="editRoomView">
-
                     View
-
                 </label>
-
 
                 <select id="editRoomView">
 
                     <option value="City">
-
                         City
-
                     </option>
 
-
                     <option value="Lake">
-
                         Lake
-
                     </option>
 
                 </select>
 
 
-
                 <label for="editRoomStatus">
-
                     Status
-
                 </label>
-
 
                 <select id="editRoomStatus">
 
-
                     <option value="Available">
-
                         Available
-
                     </option>
-
 
                     <option value="Occupied">
-
                         Occupied
-
                     </option>
-
 
                     <option value="Cleaning">
-
                         Cleaning
-
                     </option>
-
 
                     <option value="Maintenance">
-
                         Maintenance
-
                     </option>
-
 
                 </select>
 
             </div>
 
-
-
             <div class="modal-actions">
-
 
                 <button
                     class="button-primary"
                     onclick="saveRoomEdit()"
                 >
-
                     Save
-
                 </button>
-
 
                 <button
                     class="button-secondary"
                     onclick="closeRoomEdit()"
                 >
-
                     Cancel
-
                 </button>
-
 
             </div>
 
@@ -727,9 +579,7 @@
     </div>
 
 
-
     <script src="admin.js"></script>
 
 </body>
-
 </html>

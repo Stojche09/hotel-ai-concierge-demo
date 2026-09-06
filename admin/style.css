@@ -5,29 +5,130 @@ body {
     color: #1f2937;
 }
 
+[hidden] {
+    display: none !important;
+}
+
+/* LOGIN */
+.login-screen {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    box-sizing: border-box;
+    background: #f4f6f9;
+}
+
+.login-card {
+    width: 100%;
+    max-width: 420px;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    padding: 34px;
+    box-sizing: border-box;
+    box-shadow: 0 18px 45px rgba(15, 23, 42, 0.12);
+}
+
+.login-brand {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 26px;
+    color: #1f2937;
+}
+
+.login-card h1 {
+    margin: 0;
+    font-size: 28px;
+    color: #1f2937;
+}
+
+.login-subtitle {
+    margin: 8px 0 26px;
+    color: #6b7280;
+    line-height: 1.5;
+}
+
+.login-form {
+    display: flex;
+    flex-direction: column;
+}
+
+.login-form label {
+    margin-bottom: 7px;
+    color: #374151;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.login-form input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 12px 13px;
+    margin-bottom: 16px;
+    border: 1px solid #d1d5db;
+    border-radius: 9px;
+    background: white;
+    color: #1f2937;
+    font-size: 15px;
+}
+
+.login-form input:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.10);
+}
+
+.login-error {
+    min-height: 20px;
+    margin: -4px 0 12px;
+    color: #b91c1c;
+    font-size: 14px;
+}
+
+.login-button {
+    width: 100%;
+    padding: 12px 16px;
+    background: #2563eb;
+    color: white;
+    font-size: 15px;
+}
+
+.login-button:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
 
 /* DASHBOARD LAYOUT */
-
 .dashboard-layout {
     display: flex;
     min-height: 100vh;
 }
 
-
 /* SIDEBAR */
-
 .sidebar {
     width: 230px;
+    min-height: 100vh;
     background: #1f2937;
     color: white;
     padding: 24px 18px;
     box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
 }
 
 .sidebar-brand {
     font-size: 20px;
     font-weight: bold;
-    margin-bottom: 35px;
+    margin-bottom: 14px;
+}
+
+.sidebar-hotel-name {
+    margin: 0 0 24px;
+    padding: 0 12px;
+    font-size: 13px;
+    color: #d1d5db;
 }
 
 .sidebar-nav {
@@ -50,17 +151,45 @@ body {
     color: white;
 }
 
+.sidebar-footer {
+    margin-top: auto;
+    padding-top: 24px;
+}
+
+.logged-user {
+    padding: 12px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    background: #374151;
+}
+
+.logged-user-label {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 11px;
+    color: #cbd5e1;
+}
+
+.logout-button {
+    width: 100%;
+    background: #475569;
+    color: white;
+}
 
 /* MAIN CONTENT */
-
 .main-content {
     flex: 1;
     padding: 35px;
     box-sizing: border-box;
+    min-width: 0;
 }
 
 .page-header {
     margin-bottom: 30px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
 }
 
 .page-header h1 {
@@ -75,9 +204,23 @@ body {
     color: #6b7280;
 }
 
+.header-account {
+    display: flex;
+    align-items: center;
+}
+
+.hotel-badge {
+    display: inline-block;
+    padding: 9px 12px;
+    border: 1px solid #dbe3ef;
+    border-radius: 8px;
+    background: white;
+    color: #334155;
+    font-size: 13px;
+    font-weight: 600;
+}
 
 /* SECTIONS */
-
 section {
     margin-bottom: 40px;
 }
@@ -96,9 +239,7 @@ section {
     color: #6b7280;
 }
 
-
 /* STATISTICS */
-
 .stats {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -128,9 +269,7 @@ section {
     color: #1f2937;
 }
 
-
 /* SEARCH / TOOLBAR */
-
 .table-toolbar {
     margin-bottom: 15px;
 }
@@ -151,9 +290,7 @@ section {
     border-color: #64748b;
 }
 
-
 /* TABLE WRAPPER */
-
 .table-container {
     width: 100%;
     overflow-x: auto;
@@ -163,9 +300,7 @@ section {
     border: 1px solid #e5e7eb;
 }
 
-
 /* TABLES */
-
 table {
     width: 100%;
     border-collapse: collapse;
@@ -194,9 +329,7 @@ tbody tr:hover {
     background: #f3f4f6;
 }
 
-
 /* BUTTONS */
-
 button {
     border: none;
     padding: 8px 14px;
@@ -220,9 +353,6 @@ button:hover {
     color: #1f2937;
 }
 
-
-/* DEFAULT TABLE ACTION BUTTONS */
-
 td button {
     background: #334155;
     color: white;
@@ -233,9 +363,7 @@ td button:hover {
     background: #1e293b;
 }
 
-
 /* SELECTS */
-
 select {
     padding: 7px 10px;
     border-radius: 7px;
@@ -244,9 +372,7 @@ select {
     cursor: pointer;
 }
 
-
 /* BOOKING STATUS COLORS */
-
 .status-pending {
     background: #facc15;
 }
@@ -268,7 +394,6 @@ select {
 }
 
 /* ROOM STATUS BADGES */
-
 .room-status {
     display: inline-block;
     padding: 6px 10px;
@@ -297,9 +422,7 @@ select {
     color: #374151;
 }
 
-
 /* MODALS */
-
 .modal {
     position: fixed;
     inset: 0;
@@ -355,22 +478,35 @@ select {
     margin-top: 5px;
 }
 
-
 /* RESPONSIVE */
-
 @media (max-width: 900px) {
-
     .dashboard-layout {
         flex-direction: column;
     }
 
     .sidebar {
         width: 100%;
+        min-height: auto;
     }
 
     .sidebar-nav {
         flex-direction: row;
         flex-wrap: wrap;
+    }
+
+    .sidebar-footer {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .logged-user {
+        flex: 1;
+        margin-bottom: 0;
+    }
+
+    .logout-button {
+        width: auto;
     }
 
     .main-content {
@@ -379,6 +515,9 @@ select {
 }
 
 @media (max-width: 600px) {
+    .login-card {
+        padding: 26px 20px;
+    }
 
     .main-content {
         padding: 16px;
@@ -388,11 +527,24 @@ select {
         grid-template-columns: 1fr;
     }
 
+    .page-header {
+        flex-direction: column;
+    }
+
     .page-header h1 {
         font-size: 24px;
     }
 
     .table-toolbar input {
+        width: 100%;
+    }
+
+    .sidebar-footer {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .logout-button {
         width: 100%;
     }
 }

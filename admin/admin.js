@@ -1,92 +1,456 @@
 const API_BASE =
     "https://hotel-ai-backend-production.up.railway.app";
 
-const HOTEL_CONFIG = {
-    makpetrol: {
-        name: "Hotel Makpetrol"
-    },
-    belica: {
-        name: "Hotel Belica"
-    }
-};
+const AUTH_TOKEN_KEY =
+    "hotel_admin_access_token";
+
+const AUTH_USER_KEY =
+    "hotel_admin_user";
 
 let allBookings = [];
 let allRooms = [];
+
 let editId = null;
 let editRoomNumber = null;
 
 
-function getHotelId() {
+// =========================================================
+// AUTH STORAGE
+// =========================================================
 
-    const params = new URLSearchParams(
-        window.location.search
+function getAccessToken() {
+
+    return sessionStorage.getItem(
+        AUTH_TOKEN_KEY
     );
+}
 
-    const hotelFromUrl = (
-        params.get("hotel") ||
-        params.get("hotel_id") ||
-        "makpetrol"
-    )
-        .trim()
-        .toLowerCase();
 
-    if (HOTEL_CONFIG[hotelFromUrl]) {
-        return hotelFromUrl;
+function getStoredUser() {
+
+    const rawUser =
+        sessionStorage.getItem(
+            AUTH_USER_KEY
+        );
+
+    if (!rawUser) {
+        return null;
     }
 
-    return "makpetrol";
+    try {
+
+        return JSON.parse(
+            rawUser
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Failed to parse stored admin user:",
+            error
+        );
+
+        return null;
+    }
 }
 
 
-let currentHotelId = getHotelId();
+function saveAuthSession(
+    accessToken,
+    user
+) {
 
+    sessionStorage.setItem(
+        AUTH_TOKEN_KEY,
+        accessToken
+    );
 
-function getHotelName() {
-
-    return (
-        HOTEL_CONFIG[currentHotelId]?.name ||
-        currentHotelId
+    sessionStorage.setItem(
+        AUTH_USER_KEY,
+        JSON.stringify(user)
     );
 }
 
 
-function buildApiUrl(path) {
+function clearAuthSession() {
 
-    const separator = path.includes("?")
-        ? "&"
-        : "?";
+    sessionStorage.removeItem(
+        AUTH_TOKEN_KEY
+    );
 
-    return (
-        `${API_BASE}${path}` +
-        `${separator}hotel_id=` +
-        `${encodeURIComponent(currentHotelId)}`
+    sessionStorage.removeItem(
+        AUTH_USER_KEY
     );
 }
 
+
+// =========================================================
+// LOGIN / LOGOUT
+// =========================================================
+
+function showLoginScreen(
+    message = ""
+) {
+
+    const loginScreen =
+        document.getElementById(
+            "loginScreen"
+        );
+
+    const dashboardApp =
+        document.getElementById(
+            "dashboardApp"
+        );
+
+    const loginError =
+        document.getElementById(
+            "loginError"
+        );
+
+    if (dashboardApp) {
+        dashboardApp.hidden = true;
+    }
+
+    if (loginScreen) {
+        loginScreen.hidden = false;
+    }
+
+    if (loginError) {
+        loginError.textContent =
+            message;
+    }
+
+    document.title =
+        "Hotel Admin Login";
+}
+
+
+function showDashboard() {
+
+    const loginScreen =
+        document.getElementById(
+            "loginScreen"
+        );
+
+    const dashboardApp =
+        document.getElementById(
+            "dashboardApp"
+        );
+
+    if (loginScreen) {
+        loginScreen.hidden = true;
+    }
+
+    if (dashboardApp) {
+        dashboardApp.hidden = false;
+    }
+
+    updateHotelUI();
+}
+
+
+async function handleLogin(event) {
+
+    event.preventDefault();
+
+    const usernameInput =
+        document.getElementById(
+            "loginUsername"
+        );
+
+    const passwordInput =
+        document.getElementById(
+            "loginPassword"
+        );
+
+    const loginButton =
+        document.getElementById(
+            "loginButton"
+        );
+
+    const loginError =
+        document.getElementById(
+            "loginError"
+        );
+
+    const username =
+        usernameInput.value.trim();
+
+    const password =
+        passwordInput.value;
+
+    if (!username || !password) {
+
+        loginError.textContent =
+            "Username and password are required.";
+
+        return;
+    }
+
+    loginError.textContent = "";
+
+    loginButton.disabled = true;
+
+    loginButton.textContent =
+        "Signing in...";
+
+    try {
+
+        const response =
+            await fetch(
+                `${API_BASE}/admin/login`,
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body: JSON.stringify({
+                        username: username,
+                        password: password
+                    })
+                }
+            );
+
+
+        const data =
+            await response.json()
+                .catch(
+                    () => ({})
+                );
+
+
+        if (!response.ok) {
+
+            loginError.textContent =
+                data.detail ||
+                "Incorrect username or password.";
+
+            return;
+        }
+
+
+        const user = {
+
+            username:
+                data.username,
+
+            hotel_id:
+                data.hotel_id,
+
+            hotel_name:
+                data.hotel_name,
+
+            role:
+                data.role
+        };
+
+
+        saveAuthSession(
+            data.access_token,
+            user
+        );
+
+
+        passwordInput.value = "";
+
+
+        showDashboard();
+
+
+        await loadDashboardData();
+
+
+    } catch (error) {
+
+        console.error(
+            "Login failed:",
+            error
+        );
+
+        loginError.textContent =
+            "Could not connect to the server.";
+
+    } finally {
+
+        loginButton.disabled =
+            false;
+
+        loginButton.textContent =
+            "Sign In";
+    }
+}
+
+
+function logout() {
+
+    clearAuthSession();
+
+    allBookings = [];
+    allRooms = [];
+
+    editId = null;
+    editRoomNumber = null;
+
+    closeEdit();
+    closeRoomEdit();
+
+
+    const usernameInput =
+        document.getElementById(
+            "loginUsername"
+        );
+
+    const passwordInput =
+        document.getElementById(
+            "loginPassword"
+        );
+
+
+    if (usernameInput) {
+        usernameInput.value = "";
+    }
+
+    if (passwordInput) {
+        passwordInput.value = "";
+    }
+
+
+    showLoginScreen();
+}
+
+
+// =========================================================
+// AUTHENTICATED FETCH
+// =========================================================
+
+async function authenticatedFetch(
+    path,
+    options = {}
+) {
+
+    const token =
+        getAccessToken();
+
+
+    if (!token) {
+
+        showLoginScreen(
+            "Please sign in to continue."
+        );
+
+        throw new Error(
+            "Authentication required."
+        );
+    }
+
+
+    const headers =
+        new Headers(
+            options.headers || {}
+        );
+
+
+    headers.set(
+        "Authorization",
+        `Bearer ${token}`
+    );
+
+
+    const response =
+        await fetch(
+            `${API_BASE}${path}`,
+            {
+                ...options,
+                headers: headers
+            }
+        );
+
+
+    if (response.status === 401) {
+
+        clearAuthSession();
+
+        showLoginScreen(
+            "Your session expired. Please sign in again."
+        );
+
+        throw new Error(
+            "Authentication session expired."
+        );
+    }
+
+
+    if (response.status === 403) {
+
+        const errorData =
+            await response.json()
+                .catch(
+                    () => ({})
+                );
+
+        throw new Error(
+            errorData.detail ||
+            "You do not have permission to perform this action."
+        );
+    }
+
+
+    return response;
+}
+
+
+// =========================================================
+// HOTEL UI
+// =========================================================
 
 function updateHotelUI() {
 
-    const hotelName = getHotelName();
+    const user =
+        getStoredUser();
+
+    if (!user) {
+        return;
+    }
+
+
+    const hotelName =
+        user.hotel_name ||
+        user.hotel_id ||
+        "Hotel";
+
 
     const title =
         document.getElementById(
             "hotelDashboardTitle"
         );
 
+
     const subtitle =
         document.getElementById(
             "hotelDashboardSubtitle"
         );
 
-    const selector =
-        document.getElementById(
-            "hotelSelector"
-        );
 
     const sidebarHotelName =
         document.getElementById(
             "sidebarHotelName"
         );
+
+
+    const loggedUsername =
+        document.getElementById(
+            "loggedUsername"
+        );
+
+
+    const headerHotelBadge =
+        document.getElementById(
+            "headerHotelBadge"
+        );
+
 
     if (title) {
 
@@ -94,17 +458,13 @@ function updateHotelUI() {
             `${hotelName} Admin Dashboard`;
     }
 
+
     if (subtitle) {
 
         subtitle.textContent =
             `Manage rooms, reservations and operations for ${hotelName}.`;
     }
 
-    if (selector) {
-
-        selector.value =
-            currentHotelId;
-    }
 
     if (sidebarHotelName) {
 
@@ -112,72 +472,102 @@ function updateHotelUI() {
             hotelName;
     }
 
+
+    if (loggedUsername) {
+
+        loggedUsername.textContent =
+            user.username ||
+            "Admin";
+    }
+
+
+    if (headerHotelBadge) {
+
+        headerHotelBadge.textContent =
+            hotelName;
+    }
+
+
     document.title =
         `${hotelName} Admin Dashboard`;
 }
 
 
-function changeHotel(hotelId) {
+// =========================================================
+// DASHBOARD DATA
+// =========================================================
 
-    if (!HOTEL_CONFIG[hotelId]) {
-        return;
-    }
+async function loadDashboardData() {
 
-    const url = new URL(
-        window.location.href
-    );
-
-    url.searchParams.set(
-        "hotel",
-        hotelId
-    );
-
-    window.location.href =
-        url.toString();
+    await Promise.all([
+        loadBookings(),
+        loadRooms()
+    ]);
 }
 
+
+// =========================================================
+// BOOKINGS
+// =========================================================
 
 async function loadBookings() {
 
     try {
 
-        const response = await fetch(
-            buildApiUrl(
+        const response =
+            await authenticatedFetch(
                 "/admin/bookings"
-            )
-        );
+            );
+
 
         if (!response.ok) {
 
+            const errorData =
+                await response.json()
+                    .catch(
+                        () => ({})
+                    );
+
             throw new Error(
+                errorData.detail ||
                 `Bookings request failed: ${response.status}`
             );
         }
 
+
         const data =
             await response.json();
 
-        console.log(
-            "Bookings API response:",
-            data
-        );
 
-        if (!Array.isArray(data.bookings)) {
+        if (!Array.isArray(
+            data.bookings
+        )) {
 
             throw new Error(
                 "data.bookings is not an array"
             );
         }
 
+
         allBookings =
             data.bookings;
 
-        document.getElementById(
-            "totalBookings"
-        ).textContent =
-            allBookings.length;
+
+        const totalBookings =
+            document.getElementById(
+                "totalBookings"
+            );
+
+
+        if (totalBookings) {
+
+            totalBookings.textContent =
+                allBookings.length;
+        }
+
 
         let totalGuests = 0;
+
 
         allBookings.forEach(
             booking => {
@@ -195,14 +585,22 @@ async function loadBookings() {
             }
         );
 
-        document.getElementById(
-            "totalGuests"
-        ).textContent =
-            totalGuests;
 
-        renderBookings(
-            allBookings
-        );
+        const totalGuestsElement =
+            document.getElementById(
+                "totalGuests"
+            );
+
+
+        if (totalGuestsElement) {
+
+            totalGuestsElement.textContent =
+                totalGuests;
+        }
+
+
+        filterBookings();
+
 
     } catch (error) {
 
@@ -211,149 +609,79 @@ async function loadBookings() {
             error
         );
 
+
         allBookings = [];
 
-        document.getElementById(
-            "totalBookings"
-        ).textContent = "0";
 
-        document.getElementById(
-            "totalGuests"
-        ).textContent = "0";
+        const totalBookings =
+            document.getElementById(
+                "totalBookings"
+            );
+
+        const totalGuests =
+            document.getElementById(
+                "totalGuests"
+            );
+
+
+        if (totalBookings) {
+            totalBookings.textContent = "0";
+        }
+
+
+        if (totalGuests) {
+            totalGuests.textContent = "0";
+        }
+
 
         renderBookings([]);
     }
 }
 
 
+// =========================================================
+// ROOMS
+// =========================================================
+
 async function loadRooms() {
 
     try {
 
-        const response = await fetch(
-            buildApiUrl(
+        const response =
+            await authenticatedFetch(
                 "/admin/rooms"
-            )
-        );
+            );
+
 
         if (!response.ok) {
 
+            const errorData =
+                await response.json()
+                    .catch(
+                        () => ({})
+                    );
+
             throw new Error(
+                errorData.detail ||
                 `Rooms request failed: ${response.status}`
             );
         }
 
+
         const data =
             await response.json();
+
 
         allRooms =
             Array.isArray(data.rooms)
                 ? data.rooms
                 : [];
 
-        const totalRooms =
-            allRooms.length;
 
-        const availableRooms =
-            allRooms.filter(
-                room =>
-                    room.status ===
-                    "Available"
-            ).length;
+        updateRoomStatistics();
 
-        const occupiedRooms =
-            allRooms.filter(
-                room =>
-                    room.status ===
-                    "Occupied"
-            ).length;
+        renderRooms();
 
-        const cleaningRooms =
-            allRooms.filter(
-                room =>
-                    room.status ===
-                    "Cleaning"
-            ).length;
-
-        const maintenanceRooms =
-            allRooms.filter(
-                room =>
-                    room.status ===
-                    "Maintenance"
-            ).length;
-
-        document.getElementById(
-            "totalRooms"
-        ).textContent =
-            totalRooms;
-
-        document.getElementById(
-            "availableRooms"
-        ).textContent =
-            availableRooms;
-
-        document.getElementById(
-            "occupiedRooms"
-        ).textContent =
-            occupiedRooms;
-
-        document.getElementById(
-            "cleaningRooms"
-        ).textContent =
-            cleaningRooms;
-
-        document.getElementById(
-            "maintenanceRooms"
-        ).textContent =
-            maintenanceRooms;
-
-        const roomsBody =
-            document.getElementById(
-                "roomsBody"
-            );
-
-        roomsBody.innerHTML = "";
-
-        allRooms.forEach(room => {
-
-            roomsBody.innerHTML += `
-                <tr>
-
-                    <td>
-                        ${room.room_number}
-                    </td>
-
-                    <td>
-                        ${room.type}
-                    </td>
-
-                    <td>
-                        ${room.view}
-                    </td>
-
-                    <td>
-
-                        <span
-                            class="room-status ${getRoomStatusClass(room.status)}"
-                        >
-                            ${room.status}
-                        </span>
-
-                    </td>
-
-                    <td>
-
-                        <button
-                            onclick="editRoom('${room.room_number}')"
-                        >
-                            Edit
-                        </button>
-
-                    </td>
-
-                </tr>
-            `;
-        });
 
     } catch (error) {
 
@@ -363,11 +691,204 @@ async function loadRooms() {
         );
 
         allRooms = [];
+
+        updateRoomStatistics();
+
+        renderRooms();
     }
 }
 
 
-function getRoomStatusClass(status) {
+function updateRoomStatistics() {
+
+    const totalRooms =
+        allRooms.length;
+
+
+    const availableRooms =
+        allRooms.filter(
+            room =>
+                room.status ===
+                "Available"
+        ).length;
+
+
+    const occupiedRooms =
+        allRooms.filter(
+            room =>
+                room.status ===
+                "Occupied"
+        ).length;
+
+
+    const cleaningRooms =
+        allRooms.filter(
+            room =>
+                room.status ===
+                "Cleaning"
+        ).length;
+
+
+    const maintenanceRooms =
+        allRooms.filter(
+            room =>
+                room.status ===
+                "Maintenance"
+        ).length;
+
+
+    setText(
+        "totalRooms",
+        totalRooms
+    );
+
+
+    setText(
+        "availableRooms",
+        availableRooms
+    );
+
+
+    setText(
+        "occupiedRooms",
+        occupiedRooms
+    );
+
+
+    setText(
+        "cleaningRooms",
+        cleaningRooms
+    );
+
+
+    setText(
+        "maintenanceRooms",
+        maintenanceRooms
+    );
+}
+
+
+function setText(
+    elementId,
+    value
+) {
+
+    const element =
+        document.getElementById(
+            elementId
+        );
+
+
+    if (element) {
+
+        element.textContent =
+            value;
+    }
+}
+
+
+function renderRooms() {
+
+    const roomsBody =
+        document.getElementById(
+            "roomsBody"
+        );
+
+
+    if (!roomsBody) {
+        return;
+    }
+
+
+    roomsBody.innerHTML = "";
+
+
+    allRooms.forEach(
+        room => {
+
+            const row =
+                document.createElement(
+                    "tr"
+                );
+
+
+            const roomNumber =
+                escapeHtml(
+                    room.room_number
+                );
+
+
+            const roomType =
+                escapeHtml(
+                    room.type
+                );
+
+
+            const roomView =
+                escapeHtml(
+                    room.view
+                );
+
+
+            const roomStatus =
+                escapeHtml(
+                    room.status
+                );
+
+
+            const safeRoomNumber =
+                escapeJsString(
+                    room.room_number
+                );
+
+
+            row.innerHTML = `
+
+                <td>
+                    ${roomNumber}
+                </td>
+
+                <td>
+                    ${roomType}
+                </td>
+
+                <td>
+                    ${roomView}
+                </td>
+
+                <td>
+
+                    <span
+                        class="room-status ${getRoomStatusClass(room.status)}"
+                    >
+                        ${roomStatus}
+                    </span>
+
+                </td>
+
+                <td>
+
+                    <button
+                        onclick="editRoom('${safeRoomNumber}')"
+                    >
+                        Edit
+                    </button>
+
+                </td>
+            `;
+
+
+            roomsBody.appendChild(
+                row
+            );
+        }
+    );
+}
+
+
+function getRoomStatusClass(
+    status
+) {
 
     switch (status) {
 
@@ -389,41 +910,109 @@ function getRoomStatusClass(status) {
 }
 
 
-function renderBookings(bookings) {
+// =========================================================
+// BOOKING TABLE
+// =========================================================
+
+function renderBookings(
+    bookings
+) {
 
     const table =
         document.getElementById(
             "bookings"
         );
 
+
+    if (!table) {
+        return;
+    }
+
+
     table.innerHTML = "";
 
-    bookings.forEach(booking => {
 
-        table.innerHTML += `
-            <tr>
+    bookings.forEach(
+        booking => {
+
+            const confirmationId =
+                escapeHtml(
+                    booking.confirmation_id
+                );
+
+
+            const guestName =
+                escapeHtml(
+                    booking.name
+                );
+
+
+            const room =
+                escapeHtml(
+                    booking.room ||
+                    "Not Assigned"
+                );
+
+
+            const guests =
+                escapeHtml(
+                    booking.guests
+                );
+
+
+            const checkIn =
+                escapeHtml(
+                    booking.check_in
+                );
+
+
+            const checkOut =
+                escapeHtml(
+                    booking.check_out
+                );
+
+
+            const phone =
+                escapeHtml(
+                    booking.phone
+                );
+
+
+            const safeId =
+                escapeJsString(
+                    booking.confirmation_id
+                );
+
+
+            const row =
+                document.createElement(
+                    "tr"
+                );
+
+
+            row.innerHTML = `
 
                 <td>
-                    ${booking.confirmation_id}
+                    ${confirmationId}
                 </td>
 
                 <td>
-                    ${booking.name}
+                    ${guestName}
                 </td>
 
                 <td>
-                    ${booking.room || "Not Assigned"}
+                    ${room}
                 </td>
 
                 <td>
-                    ${booking.guests}
+                    ${guests}
                 </td>
 
                 <td>
 
                     <select
                         class="${getStatusClass(booking.status)}"
-                        onchange="changeStatus('${booking.confirmation_id}', this.value)"
+                        onchange="changeStatus('${safeId}', this.value)"
                     >
 
                         <option
@@ -461,66 +1050,124 @@ function renderBookings(bookings) {
                             Cancelled
                         </option>
 
+                        <option
+                            value="Expired"
+                            ${booking.status === "Expired" ? "selected" : ""}
+                        >
+                            Expired
+                        </option>
+
                     </select>
 
                 </td>
 
                 <td>
-                    ${booking.check_in}
+                    ${checkIn}
                 </td>
 
                 <td>
-                    ${booking.phone}
+                    ${checkOut}
+                </td>
+
+                <td>
+                    ${phone}
                 </td>
 
                 <td>
 
                     <button
-                        onclick="editBooking('${booking.confirmation_id}')"
+                        onclick="editBooking('${safeId}')"
                     >
                         Edit
                     </button>
 
                     <button
-                        onclick="deleteBooking('${booking.confirmation_id}')"
+                        onclick="deleteBooking('${safeId}')"
                     >
                         Delete
                     </button>
 
                 </td>
+            `;
 
-            </tr>
-        `;
-    });
+
+            table.appendChild(
+                row
+            );
+        }
+    );
 }
 
 
+// =========================================================
+// BOOKING SEARCH + STATUS FILTER
+// =========================================================
+
 function filterBookings() {
 
-    const search = document
-        .getElementById("search")
-        .value
-        .toLowerCase();
+    const searchInput =
+        document.getElementById(
+            "search"
+        );
+
+    const statusFilter =
+        document.getElementById(
+            "statusFilter"
+        );
+
+
+    const search =
+        searchInput
+            ? searchInput.value
+                .trim()
+                .toLowerCase()
+            : "";
+
+
+    const selectedStatus =
+        statusFilter
+            ? statusFilter.value
+            : "All";
+
 
     const filtered =
         allBookings.filter(
-            booking =>
+            booking => {
 
-                String(
-                    booking.name || ""
-                )
-                    .toLowerCase()
-                    .includes(search)
+                const searchableValues = [
+                    booking.name,
+                    booking.confirmation_id,
+                    booking.phone,
+                    booking.room,
+                    booking.check_in,
+                    booking.check_out
+                ];
 
-                ||
 
-                String(
-                    booking.confirmation_id ||
-                    ""
-                )
-                    .toLowerCase()
-                    .includes(search)
+                const matchesSearch =
+                    !search ||
+                    searchableValues.some(
+                        value =>
+                            String(
+                                value || ""
+                            )
+                                .toLowerCase()
+                                .includes(search)
+                    );
+
+
+                const matchesStatus =
+                    selectedStatus === "All" ||
+                    booking.status === selectedStatus;
+
+
+                return (
+                    matchesSearch &&
+                    matchesStatus
+                );
+            }
         );
+
 
     renderBookings(
         filtered
@@ -528,66 +1175,94 @@ function filterBookings() {
 }
 
 
-async function deleteBooking(id) {
+// =========================================================
+// DELETE BOOKING
+// =========================================================
 
-    const response = await fetch(
+async function deleteBooking(
+    id
+) {
 
-        buildApiUrl(
-            `/admin/booking/${encodeURIComponent(id)}`
-        ),
+    const confirmed =
+        window.confirm(
+            `Delete booking ${id}?`
+        );
 
-        {
-            method: "DELETE"
+
+    if (!confirmed) {
+        return;
+    }
+
+
+    try {
+
+        const response =
+            await authenticatedFetch(
+
+                `/admin/booking/${encodeURIComponent(id)}`,
+
+                {
+                    method: "DELETE"
+                }
+            );
+
+
+        if (!response.ok) {
+
+            const errorData =
+                await response.json()
+                    .catch(
+                        () => ({})
+                    );
+
+
+            throw new Error(
+                errorData.detail ||
+                "Failed to delete booking."
+            );
         }
-    );
 
-    if (response.ok) {
 
         alert(
             "Booking deleted successfully."
         );
 
-        await Promise.all([
-            loadBookings(),
-            loadRooms()
-        ]);
 
-    } else {
+        await loadDashboardData();
 
-        const errorData =
-            await response.json()
-                .catch(
-                    () => ({})
-                );
+
+    } catch (error) {
 
         console.error(
             "Delete booking failed:",
-            errorData
+            error
         );
 
+
         alert(
-            errorData.detail ||
-            "Failed to delete booking."
+            error.message
         );
     }
 }
 
 
-function editBooking(id) {
+// =========================================================
+// EDIT BOOKING
+// =========================================================
+
+function editBooking(
+    id
+) {
 
     const booking =
         allBookings.find(
-            booking =>
-                booking.confirmation_id ===
+            item =>
+                item.confirmation_id ===
                 id
         );
 
-    if (!booking) {
 
-        console.error(
-            "Booking not found:",
-            id
-        );
+    if (!booking) {
 
         alert(
             "Booking not found."
@@ -596,32 +1271,61 @@ function editBooking(id) {
         return;
     }
 
+
     editId = id;
+
+
+    const guestNameInput =
+        document.getElementById(
+            "editGuestName"
+        );
+
+
+    const guestsInput =
+        document.getElementById(
+            "editGuests"
+        );
+
+
+    const checkInInput =
+        document.getElementById(
+            "editCheckIn"
+        );
+
+
+    const checkOutInput =
+        document.getElementById(
+            "editCheckOut"
+        );
+
 
     const phoneInput =
         document.getElementById(
             "editPhone"
         );
 
+
     const roomSelect =
         document.getElementById(
             "editRoom"
         );
+
 
     const modal =
         document.getElementById(
             "editModal"
         );
 
+
     if (
+        !guestNameInput ||
+        !guestsInput ||
+        !checkInInput ||
+        !checkOutInput ||
         !phoneInput ||
         !roomSelect ||
         !modal
     ) {
-
-        console.error(
-            "Booking modal elements are missing."
-        );
 
         alert(
             "Booking edit modal is not configured correctly."
@@ -630,65 +1334,103 @@ function editBooking(id) {
         return;
     }
 
+
+    guestNameInput.value =
+        booking.name ||
+        "";
+
+
+    guestsInput.value =
+        booking.guests ||
+        "";
+
+
+    checkInInput.value =
+        booking.check_in ||
+        "";
+
+
+    checkOutInput.value =
+        booking.check_out ||
+        "";
+
+
     phoneInput.value =
-        booking.phone || "";
+        booking.phone ||
+        "";
+
 
     roomSelect.innerHTML = `
+
         <option value="Not Assigned">
             Not Assigned
         </option>
     `;
 
-    allRooms.forEach(room => {
 
-        const roomNumber =
-            String(
-                room.room_number
-            );
+    allRooms.forEach(
+        room => {
 
-        const currentRoom =
-            String(
-                booking.room ||
-                "Not Assigned"
-            );
+            const roomNumber =
+                String(
+                    room.room_number
+                );
 
-        const isAvailable =
-            room.status ===
-            "Available";
 
-        const isCurrentRoom =
-            roomNumber ===
-            currentRoom;
+            const currentRoom =
+                String(
+                    booking.room ||
+                    "Not Assigned"
+                );
 
-        if (
-            isAvailable ||
-            isCurrentRoom
-        ) {
 
-            const statusLabel =
+            const isAvailable =
+                room.status ===
+                "Available";
+
+
+            const isCurrentRoom =
+                roomNumber ===
+                currentRoom;
+
+
+            if (
+                isAvailable ||
                 isCurrentRoom
-                    ? `${room.status} — Current Room`
-                    : room.status;
+            ) {
 
-            roomSelect.innerHTML += `
-                <option value="${roomNumber}">
+                const statusLabel =
+                    isCurrentRoom
+                        ? `${room.status} — Current Room`
+                        : room.status;
 
-                    ${roomNumber}
-                    —
-                    ${room.type}
-                    —
-                    ${room.view}
-                    —
-                    ${statusLabel}
 
-                </option>
-            `;
+                const option =
+                    document.createElement(
+                        "option"
+                    );
+
+
+                option.value =
+                    roomNumber;
+
+
+                option.textContent =
+                    `${roomNumber} — ${room.type} — ${room.view} — ${statusLabel}`;
+
+
+                roomSelect.appendChild(
+                    option
+                );
+            }
         }
-    });
+    );
+
 
     roomSelect.value =
         booking.room ||
         "Not Assigned";
+
 
     modal.style.display =
         "flex";
@@ -697,10 +1439,18 @@ function editBooking(id) {
 
 function closeEdit() {
 
-    document.getElementById(
-        "editModal"
-    ).style.display =
-        "none";
+    const modal =
+        document.getElementById(
+            "editModal"
+        );
+
+
+    if (modal) {
+
+        modal.style.display =
+            "none";
+    }
+
 
     editId = null;
 }
@@ -711,113 +1461,155 @@ async function saveEdit() {
     const currentBookingId =
         editId;
 
+
+    if (!currentBookingId) {
+        return;
+    }
+
+
     const newPhone =
         document.getElementById(
             "editPhone"
         ).value;
+
 
     const newRoom =
         document.getElementById(
             "editRoom"
         ).value;
 
-    const response = await fetch(
 
-        buildApiUrl(
-            `/admin/booking/${encodeURIComponent(currentBookingId)}`
-        ),
+    try {
 
-        {
-            method: "PUT",
+        const response =
+            await authenticatedFetch(
 
-            headers: {
-                "Content-Type":
-                    "application/json"
-            },
+                `/admin/booking/${encodeURIComponent(currentBookingId)}`,
 
-            body: JSON.stringify({
-                phone: newPhone,
-                room: newRoom
-            })
+                {
+                    method: "PUT",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body: JSON.stringify({
+                        phone: newPhone,
+                        room: newRoom
+                    })
+                }
+            );
+
+
+        if (!response.ok) {
+
+            const errorData =
+                await response.json()
+                    .catch(
+                        () => ({})
+                    );
+
+
+            throw new Error(
+                errorData.detail ||
+                "Failed to update booking."
+            );
         }
-    );
 
-    if (response.ok) {
 
         closeEdit();
 
-        await Promise.all([
-            loadBookings(),
-            loadRooms()
-        ]);
 
-    } else {
+        await loadDashboardData();
 
-        const errorData =
-            await response.json()
-                .catch(
-                    () => ({})
-                );
+
+    } catch (error) {
 
         console.error(
             "Booking update failed:",
-            errorData
+            error
         );
 
+
         alert(
-            errorData.detail ||
-            "Failed to update booking"
+            error.message
         );
     }
 }
 
+
+// =========================================================
+// BOOKING STATUS
+// =========================================================
 
 async function changeStatus(
     id,
     status
 ) {
 
-    const response = await fetch(
+    try {
 
-        buildApiUrl(
-            `/admin/booking/${encodeURIComponent(id)}/status`
-        ),
+        const response =
+            await authenticatedFetch(
 
-        {
-            method: "PUT",
+                `/admin/booking/${encodeURIComponent(id)}/status`,
 
-            headers: {
-                "Content-Type":
-                    "application/json"
-            },
+                {
+                    method: "PUT",
 
-            body: JSON.stringify({
-                status: status
-            })
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body: JSON.stringify({
+                        status: status
+                    })
+                }
+            );
+
+
+        if (!response.ok) {
+
+            const errorData =
+                await response.json()
+                    .catch(
+                        () => ({})
+                    );
+
+
+            throw new Error(
+                errorData.detail ||
+                "Failed to update booking status."
+            );
         }
-    );
 
-    if (response.ok) {
 
-        loadBookings();
+        await loadBookings();
 
-    } else {
 
-        const errorData =
-            await response.json()
-                .catch(
-                    () => ({})
-                );
+    } catch (error) {
+
+        console.error(
+            "Status update failed:",
+            error
+        );
+
 
         alert(
-            errorData.detail ||
-            "Failed to update booking status."
+            error.message
         );
+
+
+        await loadBookings();
     }
 }
 
 
-function getStatusClass(status) {
+function getStatusClass(
+    status
+) {
 
     switch (status) {
 
@@ -836,30 +1628,44 @@ function getStatusClass(status) {
         case "Cancelled":
             return "status-cancelled";
 
+        case "Expired":
+            return "status-cancelled";
+
         default:
             return "";
     }
 }
 
 
-function editRoom(roomNumber) {
+// =========================================================
+// EDIT ROOM
+// =========================================================
+
+function editRoom(
+    roomNumber
+) {
 
     editRoomNumber =
         String(
             roomNumber
         );
 
+
     const room =
         allRooms.find(
-            r =>
+            item =>
+
                 String(
-                    r.room_number
+                    item.room_number
                 )
+
                 ===
+
                 String(
                     roomNumber
                 )
         );
+
 
     if (!room) {
 
@@ -870,37 +1676,47 @@ function editRoom(roomNumber) {
         return;
     }
 
+
     const typeSelect =
         document.getElementById(
             "editRoomType"
         );
+
 
     const viewSelect =
         document.getElementById(
             "editRoomView"
         );
 
+
     ensureSelectOption(
         typeSelect,
         room.type
     );
+
 
     ensureSelectOption(
         viewSelect,
         room.view
     );
 
+
     typeSelect.value =
-        room.type || "";
+        room.type ||
+        "";
+
 
     viewSelect.value =
-        room.view || "";
+        room.view ||
+        "";
+
 
     document.getElementById(
         "editRoomStatus"
     ).value =
         room.status ||
         "Available";
+
 
     document.getElementById(
         "roomEditModal"
@@ -921,6 +1737,7 @@ function ensureSelectOption(
         return;
     }
 
+
     const exists =
         Array.from(
             selectElement.options
@@ -930,6 +1747,7 @@ function ensureSelectOption(
                 value
         );
 
+
     if (!exists) {
 
         const option =
@@ -937,11 +1755,14 @@ function ensureSelectOption(
                 "option"
             );
 
+
         option.value =
             value;
 
+
         option.textContent =
             value;
+
 
         selectElement.appendChild(
             option
@@ -952,12 +1773,21 @@ function ensureSelectOption(
 
 function closeRoomEdit() {
 
-    document.getElementById(
-        "roomEditModal"
-    ).style.display =
-        "none";
+    const modal =
+        document.getElementById(
+            "roomEditModal"
+        );
 
-    editRoomNumber = null;
+
+    if (modal) {
+
+        modal.style.display =
+            "none";
+    }
+
+
+    editRoomNumber =
+        null;
 }
 
 
@@ -966,75 +1796,198 @@ async function saveRoomEdit() {
     const currentRoomNumber =
         editRoomNumber;
 
+
+    if (!currentRoomNumber) {
+        return;
+    }
+
+
     const newType =
         document.getElementById(
             "editRoomType"
         ).value;
+
 
     const newView =
         document.getElementById(
             "editRoomView"
         ).value;
 
+
     const newStatus =
         document.getElementById(
             "editRoomStatus"
         ).value;
 
-    const response = await fetch(
 
-        buildApiUrl(
-            `/admin/room/${encodeURIComponent(currentRoomNumber)}`
-        ),
+    try {
 
-        {
-            method: "PUT",
+        const response =
+            await authenticatedFetch(
 
-            headers: {
-                "Content-Type":
-                    "application/json"
-            },
+                `/admin/room/${encodeURIComponent(currentRoomNumber)}`,
 
-            body: JSON.stringify({
-                type: newType,
-                view: newView,
-                status: newStatus
-            })
+                {
+                    method: "PUT",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body: JSON.stringify({
+                        type: newType,
+                        view: newView,
+                        status: newStatus
+                    })
+                }
+            );
+
+
+        if (!response.ok) {
+
+            const errorData =
+                await response.json()
+                    .catch(
+                        () => ({})
+                    );
+
+
+            throw new Error(
+                errorData.detail ||
+                "Failed to update room."
+            );
         }
-    );
 
-    if (response.ok) {
 
         closeRoomEdit();
 
-        await Promise.all([
-            loadBookings(),
-            loadRooms()
-        ]);
 
-    } else {
+        await loadDashboardData();
 
-        const errorData =
-            await response.json()
-                .catch(
-                    () => ({})
-                );
+
+    } catch (error) {
+
+        console.error(
+            "Room update failed:",
+            error
+        );
+
 
         alert(
-            errorData.detail ||
-            "Failed to update room."
+            error.message
         );
     }
 }
 
 
+// =========================================================
+// SAFE OUTPUT HELPERS
+// =========================================================
+
+function escapeHtml(
+    value
+) {
+
+    return String(
+        value ?? ""
+    )
+        .replaceAll(
+            "&",
+            "&amp;"
+        )
+        .replaceAll(
+            "<",
+            "&lt;"
+        )
+        .replaceAll(
+            ">",
+            "&gt;"
+        )
+        .replaceAll(
+            '"',
+            "&quot;"
+        )
+        .replaceAll(
+            "'",
+            "&#039;"
+        );
+}
+
+
+function escapeJsString(
+    value
+) {
+
+    return String(
+        value ?? ""
+    )
+        .replaceAll(
+            "\\",
+            "\\\\"
+        )
+        .replaceAll(
+            "'",
+            "\\'"
+        )
+        .replaceAll(
+            "\n",
+            " "
+        )
+        .replaceAll(
+            "\r",
+            " "
+        );
+}
+
+
+// =========================================================
+// INITIALIZE
+// =========================================================
+
 document.addEventListener(
     "DOMContentLoaded",
-    function () {
+    async function () {
 
-        updateHotelUI();
+        const loginForm =
+            document.getElementById(
+                "loginForm"
+            );
 
-        loadBookings();
-        loadRooms();
+
+        if (loginForm) {
+
+            loginForm.addEventListener(
+                "submit",
+                handleLogin
+            );
+        }
+
+
+        const token =
+            getAccessToken();
+
+
+        const user =
+            getStoredUser();
+
+
+        if (
+            !token ||
+            !user
+        ) {
+
+            clearAuthSession();
+
+            showLoginScreen();
+
+            return;
+        }
+
+
+        showDashboard();
+
+
+        await loadDashboardData();
     }
-);
+);                
