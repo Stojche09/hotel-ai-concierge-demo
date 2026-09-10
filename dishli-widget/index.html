@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="mk">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Хотел Дишли & Спа — AI Concierge</title>
+
+    <style>
+
+        :root {
+            --navy: #17324d;
+            --blue: #1f5f8b;
+            --light: #f4f8fb;
+            --border: #d7e1e9;
+            --text: #1f2937;
+            --muted: #667085;
+            --white: #ffffff;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: Arial, Helvetica, sans-serif;
+            background: linear-gradient(135deg, #edf4f8, #dcecf4);
+        }
+
+        .demo-page {
+            max-width: 1040px;
+            margin: 0 auto;
+            padding: 72px 24px;
+            color: var(--text);
+        }
+
+        .demo-page h1 {
+            margin: 0 0 10px;
+            color: var(--navy);
+            font-size: 40px;
+        }
+
+        .demo-page p {
+            max-width: 610px;
+            margin: 0;
+            font-size: 18px;
+            line-height: 1.6;
+            color: var(--muted);
+        }
+
+        .hotel-photo {
+            display: block;
+            width: min(680px, 100%);
+            height: 260px;
+            margin-top: 28px;
+            border-radius: 18px;
+            object-fit: cover;
+            object-position: center;
+            box-shadow: 0 14px 32px rgba(23, 50, 77, 0.18);
+        }
+
+        .widget-launcher {
+            position: fixed;
+            right: 24px;
+            bottom: 24px;
+            width: 64px;
+            height: 64px;
+            border: none;
+            border-radius: 50%;
+            color: var(--white);
+            background: linear-gradient(135deg, var(--blue), var(--navy));
+            font-size: 28px;
+            cursor: pointer;
+            box-shadow: 0 12px 30px rgba(23, 50, 77, 0.35);
+            transition: transform 0.2s ease;
+            z-index: 1000;
+        }
+
+        .widget-launcher:hover {
+            transform: translateY(-3px);
+        }
+
+        .chat-widget {
+            position: fixed;
+            right: 24px;
+            bottom: 100px;
+            width: min(385px, calc(100vw - 32px));
+            height: min(590px, calc(100vh - 132px));
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            background: var(--white);
+            box-shadow: 0 20px 50px rgba(23, 50, 77, 0.28);
+            z-index: 1000;
+        }
+
+        .chat-widget.open {
+            display: flex;
+        }
+
+        .chat-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 13px 15px;
+            color: var(--white);
+            background: linear-gradient(135deg, var(--navy), var(--blue));
+        }
+
+        .hotel-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .hotel-logo {
+            width: 42px;
+            height: 36px;
+            padding: 3px;
+            border-radius: 7px;
+            object-fit: contain;
+            background: var(--white);
+        }
+
+        .hotel-brand strong {
+            display: block;
+            font-size: 15px;
+        }
+
+        .hotel-brand span {
+            display: block;
+            margin-top: 3px;
+            font-size: 12px;
+            opacity: 0.88;
+        }
+
+        .close-button {
+            width: 32px;
+            height: 32px;
+            border: none;
+            border-radius: 50%;
+            color: var(--white);
+            background: rgba(255, 255, 255, 0.16);
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        .chat-box {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            background: var(--light);
+        }
+
+        .message {
+            max-width: 86%;
+            margin-bottom: 12px;
+            padding: 11px 13px;
+            border-radius: 14px;
+            font-size: 14px;
+            line-height: 1.45;
+            white-space: pre-wrap;
+        }
+
+        .ai-message {
+            color: var(--text);
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-bottom-left-radius: 4px;
+        }
+
+        .user-message {
+            margin-left: auto;
+            color: var(--white);
+            background: var(--blue);
+            border-bottom-right-radius: 4px;
+        }
+
+        .quick-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+
+        .quick-action {
+            padding: 8px 10px;
+            border: 1px solid #b9d1e2;
+            border-radius: 999px;
+            color: var(--navy);
+            background: var(--white);
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .quick-action:hover {
+            color: var(--white);
+            background: var(--blue);
+        }
+
+        .input-area {
+            display: flex;
+            gap: 8px;
+            padding: 12px;
+            border-top: 1px solid var(--border);
+            background: var(--white);
+        }
+
+        .input-area input {
+            min-width: 0;
+            flex: 1;
+            padding: 11px 12px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            outline: none;
+            font-size: 14px;
+        }
+
+        .input-area input:focus {
+            border-color: var(--blue);
+            box-shadow: 0 0 0 3px rgba(31, 95, 139, 0.12);
+        }
+
+        .send-button {
+            padding: 0 15px;
+            border: none;
+            border-radius: 10px;
+            color: var(--white);
+            background: var(--blue);
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .send-button:disabled {
+            cursor: not-allowed;
+            opacity: 0.65;
+        }
+
+        @media (max-width: 480px) {
+
+            .demo-page {
+                padding: 48px 20px;
+            }
+
+            .demo-page h1 {
+                font-size: 31px;
+            }
+
+            .hotel-photo {
+                height: 200px;
+            }
+
+            .widget-launcher {
+                right: 16px;
+                bottom: 16px;
+            }
+
+            .chat-widget {
+                right: 16px;
+                bottom: 92px;
+                height: min(600px, calc(100vh - 110px));
+            }
+        }
+
+    </style>
+</head>
+
+<body>
+
+<main class="demo-page">
+
+    <h1>Хотел Дишли & Спа</h1>
+
+    <p>
+        Модерен хотелски престој покрај Охридското Езеро —
+        со AI Concierge достапен 24/7 за информации,
+        услуги и барања за резервација.
+    </p>
+
+    <img
+        class="hotel-photo"
+        src="https://hoteldishli.mk/wp-content/uploads/2024/07/DM1_7695-scaled.jpg"
+        alt="Hotel Dishli & Spa"
+    >
+
+</main>
+
+<button
+    id="widgetLauncher"
+    class="widget-launcher"
+    aria-label="Отвори AI Concierge"
+>
+    💬
+</button>
+
+<section
+    id="chatWidget"
+    class="chat-widget"
+    aria-label="Хотел Дишли и Спа AI Concierge"
+>
+
+    <header class="chat-header">
+
+        <div class="hotel-brand">
+
+            <img
+                class="hotel-logo"
+                src="https://hoteldishli.mk/wp-content/uploads/2023/12/cropped-cropped-Whole_logo-removebg-100x80.png"
+                alt="Hotel Dishli & Spa logo"
+            >
+
+            <div>
+                <strong>Хотел Дишли & Спа</strong>
+
+                <span>AI Concierge • Достапен 24/7</span>
+            </div>
+        </div>
+
+        <button
+            id="closeButton"
+            class="close-button"
+            aria-label="Затвори chat"
+        >
+            ×
+        </button>
+
+    </header>
+
+    <div
+        id="chatBox"
+        class="chat-box"
+    >
+
+        <div class="message ai-message">
+            Добредојдовте во Хотел Дишли & Спа.
+            Како можеме да ви помогнеме со вашиот престој?
+        </div>
+
+        <div class="quick-actions">
+
+            <button
+                class="quick-action"
+                data-message="Tell me about your spa facilities."
+            >
+                Спа и сауна
+            </button>
+
+            <button
+                class="quick-action"
+                data-message="Do you offer SUP boards?"
+            >
+                SUP даски
+            </button>
+
+            <button
+                class="quick-action"
+                data-message="What fish specialties do you have?"
+            >
+                Рибни специјалитети
+            </button>
+
+            <button
+                class="quick-action"
+                data-message="I would like to book a room."
+            >
+                Резервирај соба
+            </button>
+
+        </div>
+
+    </div>
+
+    <div class="input-area">
+
+        <input
+            id="messageInput"
+            type="text"
+            placeholder="Прашајте нè нешто..."
+            autocomplete="off"
+        >
+
+        <button
+            id="sendButton"
+            class="send-button"
+        >
+            Испрати
+        </button>
+
+    </div>
+
+</section>
+
+<script>
+
+    const API_URL =
+        "https://hotel-ai-backend-production.up.railway.app/booking/message";
+
+    const HOTEL_ID = "dishli";
+
+    const SESSION_STORAGE_KEY =
+        "hotel_dishli_widget_session_id";
+
+
+    function getSessionId() {
+
+        let sessionId = localStorage.getItem(
+            SESSION_STORAGE_KEY
+        );
+
+        if (!sessionId) {
+
+            sessionId =
+                window.crypto &&
+                typeof window.crypto.randomUUID === "function"
+                    ? window.crypto.randomUUID()
+                    : "dishli-widget-" + Date.now();
+
+            localStorage.setItem(
+                SESSION_STORAGE_KEY,
+                sessionId
+            );
+        }
+
+        return sessionId;
+    }
+
+
+    const SESSION_ID = getSessionId();
+
+    const chatWidget =
+        document.getElementById("chatWidget");
+
+    const widgetLauncher =
+        document.getElementById("widgetLauncher");
+
+    const closeButton =
+        document.getElementById("closeButton");
+
+    const chatBox =
+        document.getElementById("chatBox");
+
+    const messageInput =
+        document.getElementById("messageInput");
+
+    const sendButton =
+        document.getElementById("sendButton");
+
+
+    function openWidget() {
+
+        chatWidget.classList.add("open");
+
+        messageInput.focus();
+    }
+
+
+    function closeWidget() {
+
+        chatWidget.classList.remove("open");
+    }
+
+
+    function addMessage(
+        text,
+        type
+    ) {
+
+        const message =
+            document.createElement("div");
+
+        message.className =
+            `message ${type}`;
+
+        message.textContent = text;
+
+        chatBox.appendChild(message);
+
+        chatBox.scrollTop = chatBox.scrollHeight;
+
+        return message;
+    }
+
+
+    async function sendMessage(
+        customMessage = null
+    ) {
+
+        const message =
+            (
+                customMessage ||
+                messageInput.value
+            ).trim();
+
+        if (!message) {
+            return;
+        }
+
+        addMessage(
+            `👤 ${message}`,
+            "user-message"
+        );
+
+        messageInput.value = "";
+
+        sendButton.disabled = true;
+
+        const typingMessage = addMessage(
+            "🤖 AI Concierge пишува...",
+            "ai-message"
+        );
+
+        try {
+
+            const response = await fetch(
+                API_URL,
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body: JSON.stringify({
+                        message: message,
+                        hotel_id: HOTEL_ID,
+                        session_id: SESSION_ID
+                    })
+                }
+            );
+
+            if (!response.ok) {
+
+                throw new Error(
+                    `Server returned ${response.status}`
+                );
+            }
+
+            const data = await response.json();
+
+            if (data.session_id) {
+
+                localStorage.setItem(
+                    SESSION_STORAGE_KEY,
+                    data.session_id
+                );
+            }
+
+            typingMessage.remove();
+
+            addMessage(
+                `🤖 ${
+                    data.reply ||
+                    "Извинете, во моментов не можеме да одговориме."
+                }`,
+                "ai-message"
+            );
+
+        } catch (error) {
+
+            console.error(
+                "Hotel Dishli & Spa widget error:",
+                error
+            );
+
+            typingMessage.remove();
+
+            addMessage(
+                "🤖 Извинете, AI Concierge е привремено недостапен. Обидете се повторно за кратко.",
+                "ai-message"
+            );
+
+        } finally {
+
+            sendButton.disabled = false;
+
+            messageInput.focus();
+        }
+    }
+
+
+    widgetLauncher.addEventListener(
+        "click",
+        openWidget
+    );
+
+    closeButton.addEventListener(
+        "click",
+        closeWidget
+    );
+
+    sendButton.addEventListener(
+        "click",
+        function () {
+            sendMessage();
+        }
+    );
+
+    messageInput.addEventListener(
+        "keydown",
+        function (event) {
+
+            if (event.key === "Enter") {
+
+                event.preventDefault();
+
+                sendMessage();
+            }
+        }
+    );
+
+    document
+        .querySelectorAll(".quick-action")
+        .forEach(
+            button => {
+
+                button.addEventListener(
+                    "click",
+                    function () {
+
+                        sendMessage(
+                            button.dataset.message
+                        );
+                    }
+                );
+            }
+        );
+
+</script>
+
+</body>
+</html>
