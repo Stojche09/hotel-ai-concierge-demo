@@ -14,56 +14,226 @@
     <style>
 
         :root {
-            --navy: #17324d;
-            --blue: #1f5f8b;
+            --navy: #12334f;
+            --blue: #1d6b9f;
+            --sky: #dcecf5;
             --light: #f4f8fb;
             --border: #d7e1e9;
             --text: #1f2937;
-            --muted: #667085;
+            --muted: #5d7182;
             --white: #ffffff;
+            --gold: #e2bd76;
         }
 
         * {
             box-sizing: border-box;
         }
 
+        html {
+            scroll-behavior: smooth;
+        }
+
         body {
             margin: 0;
             min-height: 100vh;
             font-family: Arial, Helvetica, sans-serif;
-            background: linear-gradient(135deg, #edf4f8, #dcecf4);
+            color: var(--text);
+            background: #eef5f8;
+        }
+
+        .page-background {
+            position: fixed;
+            inset: 0;
+            z-index: -2;
+            background:
+                linear-gradient(
+                    115deg,
+                    rgba(10, 38, 60, 0.92),
+                    rgba(17, 80, 118, 0.68)
+                ),
+                url("https://hoteldishli.mk/wp-content/uploads/2024/07/DM1_7695-scaled.jpg")
+                center / cover no-repeat;
+        }
+
+        .page-background::after {
+            position: absolute;
+            inset: 0;
+            content: "";
+            background:
+                radial-gradient(
+                    circle at 75% 20%,
+                    rgba(108, 195, 222, 0.22),
+                    transparent 35%
+                );
         }
 
         .demo-page {
-            max-width: 1040px;
+            width: min(1240px, 100%);
+            min-height: 100vh;
             margin: 0 auto;
-            padding: 72px 24px;
-            color: var(--text);
+            padding: 30px 32px 72px;
         }
 
-        .demo-page h1 {
-            margin: 0 0 10px;
-            color: var(--navy);
-            font-size: 40px;
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            padding: 14px 0 28px;
+            color: var(--white);
         }
 
-        .demo-page p {
-            max-width: 610px;
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-logo {
+            width: 50px;
+            height: 42px;
+            padding: 4px;
+            border-radius: 9px;
+            object-fit: contain;
+            background: var(--white);
+        }
+
+        .brand-name {
+            display: block;
+            font-size: 17px;
+            font-weight: 700;
+        }
+
+        .brand-location {
+            display: block;
+            margin-top: 3px;
+            font-size: 13px;
+            opacity: 0.82;
+        }
+
+
+        .hero-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.1fr) minmax(360px, 0.9fr);
+            align-items: center;
+            gap: 52px;
+            min-height: calc(100vh - 145px);
+            padding: 40px 0;
+        }
+
+        .hero-copy {
+            max-width: 650px;
+            color: var(--white);
+        }
+
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 18px;
+            color: #f4d79c;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .hero-copy h1 {
+            max-width: 700px;
             margin: 0;
-            font-size: 18px;
-            line-height: 1.6;
-            color: var(--muted);
+            font-size: clamp(42px, 5vw, 70px);
+            line-height: 1.05;
+            letter-spacing: -0.04em;
+        }
+
+        .hero-copy p {
+            max-width: 610px;
+            margin: 22px 0 0;
+            font-size: 19px;
+            line-height: 1.65;
+            color: rgba(255, 255, 255, 0.88);
+        }
+
+        .hero-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 30px;
+        }
+
+        .primary-button,
+        .secondary-button {
+            padding: 13px 18px;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.2s ease, background 0.2s ease;
+        }
+
+        .primary-button {
+            border: 1px solid var(--gold);
+            color: var(--navy);
+            background: var(--gold);
+        }
+
+        .secondary-button {
+            border: 1px solid rgba(255, 255, 255, 0.45);
+            color: var(--white);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .primary-button:hover,
+        .secondary-button:hover {
+            transform: translateY(-2px);
+        }
+
+        .hotel-card {
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.42);
+            border-radius: 22px;
+            background: rgba(255, 255, 255, 0.13);
+            box-shadow: 0 24px 60px rgba(4, 21, 34, 0.34);
+            backdrop-filter: blur(14px);
         }
 
         .hotel-photo {
             display: block;
-            width: min(680px, 100%);
-            height: 260px;
-            margin-top: 28px;
-            border-radius: 18px;
+            width: 100%;
+            height: 280px;
             object-fit: cover;
             object-position: center;
-            box-shadow: 0 14px 32px rgba(23, 50, 77, 0.18);
+        }
+
+        .hotel-card-content {
+            padding: 22px;
+            color: var(--white);
+        }
+
+        .hotel-card-content h2 {
+            margin: 0;
+            font-size: 21px;
+        }
+
+        .hotel-card-content p {
+            margin: 10px 0 0;
+            line-height: 1.55;
+            color: rgba(255, 255, 255, 0.78);
+        }
+
+        .feature-list {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .feature {
+            padding: 11px 10px;
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            border-radius: 10px;
+            font-size: 13px;
+            background: rgba(255, 255, 255, 0.08);
         }
 
         .widget-launcher {
@@ -78,7 +248,7 @@
             background: linear-gradient(135deg, var(--blue), var(--navy));
             font-size: 28px;
             cursor: pointer;
-            box-shadow: 0 12px 30px rgba(23, 50, 77, 0.35);
+            box-shadow: 0 12px 30px rgba(23, 50, 77, 0.4);
             transition: transform 0.2s ease;
             z-index: 1000;
         }
@@ -245,18 +415,48 @@
             opacity: 0.65;
         }
 
-        @media (max-width: 480px) {
+        @media (max-width: 860px) {
 
             .demo-page {
-                padding: 48px 20px;
+                padding: 22px 20px 60px;
             }
 
-            .demo-page h1 {
-                font-size: 31px;
+            .topbar {
+                padding-bottom: 12px;
+            }
+
+            .hero-grid {
+                grid-template-columns: 1fr;
+                gap: 30px;
+                min-height: auto;
+                padding: 50px 0 40px;
+            }
+
+            .hero-copy h1 {
+                font-size: clamp(40px, 11vw, 58px);
+            }
+
+            .hotel-card {
+                max-width: 560px;
+            }
+        }
+
+        @media (max-width: 480px) {
+
+            .brand-name {
+                font-size: 15px;
+            }
+
+            .hero-copy p {
+                font-size: 17px;
             }
 
             .hotel-photo {
-                height: 200px;
+                height: 220px;
+            }
+
+            .feature-list {
+                grid-template-columns: 1fr;
             }
 
             .widget-launcher {
@@ -276,22 +476,92 @@
 
 <body>
 
+<div class="page-background"></div>
+
 <main class="demo-page">
 
-    <h1>Хотел Дишли & Спа</h1>
+    <header class="topbar">
 
-    <p>
-        Модерен хотелски престој покрај Охридското Езеро —
-        со AI Concierge достапен 24/7 за информации,
-        услуги и барања за резервација.
-    </p>
+        <div class="brand">
 
-    <img
-        class="hotel-photo"
-        src="https://hoteldishli.mk/wp-content/uploads/2024/07/DM1_7695-scaled.jpg"
-        alt="Hotel Dishli & Spa"
-    >
+            <img
+                class="brand-logo"
+                src="https://hoteldishli.mk/wp-content/uploads/2023/12/cropped-cropped-Whole_logo-removebg-100x80.png"
+                alt="Лого на Хотел Дишли и Спа"
+            >
 
+            <div>
+                <span class="brand-name">Хотел Дишли & Спа</span>
+                <span class="brand-location">Радожда • Струга</span>
+            </div>
+        </div>
+
+    </header>
+
+    <section class="hero-grid">
+
+        <div class="hero-copy">
+
+            <span class="eyebrow">✦ Покрај Охридското Езеро</span>
+
+            <h1>
+                Вашиот одмор,
+                поддржан 24/7.
+            </h1>
+
+            <p>
+                Прашајте за сместување, спа, ресторан, услуги
+                или испратете барање за резервација преку
+                нашиот AI Concierge.
+            </p>
+
+            <div class="hero-actions">
+
+                <button
+                    id="heroChatButton"
+                    class="primary-button"
+                    type="button"
+                >
+                    Отвори AI Concierge
+                </button>
+
+                <button
+                    id="heroBookingButton"
+                    class="secondary-button"
+                    type="button"
+                >
+                    Резервирај соба
+                </button>
+            </div>
+        </div>
+
+        <aside class="hotel-card">
+
+            <img
+                class="hotel-photo"
+                src="https://hoteldishli.mk/wp-content/uploads/2024/07/DM1_7695-scaled.jpg"
+                alt="Хотел Дишли и Спа"
+            >
+
+            <div class="hotel-card-content">
+
+                <h2>Сè што ви треба за пријатен престој</h2>
+
+                <p>
+                    Истражете ги услугите или започнете разговор
+                    со виртуелниот хотелски асистент.
+                </p>
+
+                <div class="feature-list">
+
+                    <div class="feature">🧖 Спа и сауна</div>
+                    <div class="feature">🍽️ Ресторан</div>
+                    <div class="feature">🏄 SUP даски</div>
+                    <div class="feature">🤖 Достапен 24/7</div>
+                </div>
+            </div>
+        </aside>
+    </section>
 </main>
 
 <button
@@ -320,7 +590,6 @@
 
             <div>
                 <strong>Хотел Дишли & Спа</strong>
-
                 <span>AI Concierge • Достапен 24/7</span>
             </div>
         </div>
@@ -332,7 +601,6 @@
         >
             ×
         </button>
-
     </header>
 
     <div
@@ -374,9 +642,7 @@
             >
                 Резервирај соба
             </button>
-
         </div>
-
     </div>
 
     <div class="input-area">
@@ -394,9 +660,7 @@
         >
             Испрати
         </button>
-
     </div>
-
 </section>
 
 <script>
@@ -444,6 +708,12 @@
 
     const closeButton =
         document.getElementById("closeButton");
+
+    const heroChatButton =
+        document.getElementById("heroChatButton");
+
+    const heroBookingButton =
+        document.getElementById("heroBookingButton");
 
     const chatBox =
         document.getElementById("chatBox");
@@ -591,6 +861,23 @@
     widgetLauncher.addEventListener(
         "click",
         openWidget
+    );
+
+    heroChatButton.addEventListener(
+        "click",
+        openWidget
+    );
+
+    heroBookingButton.addEventListener(
+        "click",
+        function () {
+
+            openWidget();
+
+            sendMessage(
+                "I would like to book a room."
+            );
+        }
     );
 
     closeButton.addEventListener(
